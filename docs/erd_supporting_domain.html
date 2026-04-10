@@ -1,0 +1,154 @@
+
+<style>
+#erd2 svg { width:100%; }
+#erd2 svg.erDiagram .divider path { stroke-opacity:0.4; }
+#erd2 svg.erDiagram .row-rect-odd path,
+#erd2 svg.erDiagram .row-rect-odd rect,
+#erd2 svg.erDiagram .row-rect-even path,
+#erd2 svg.erDiagram .row-rect-even rect { stroke:none !important; }
+</style>
+<div style="font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;padding-top:4px;">Supporting domain — PriceHistory · Indicators · Alerts · ChatSessions · AuditLog</div>
+<div id="erd2"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '12px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#2a1f10' : '#FAEEDA',
+    primaryBorderColor: dark ? '#BA7517' : '#BA7517',
+    secondaryColor: dark ? '#1e2d1e' : '#EAF3DE',
+    tertiaryColor: dark ? '#2a1018' : '#FAECE7',
+  },
+});
+const diagram = `erDiagram
+  ASSETS {
+    uniqueidentifier Id PK
+    nvarchar_20 Symbol
+    nvarchar_20 AssetType
+  }
+
+  PRICE_HISTORY {
+    uniqueidentifier Id PK
+    uniqueidentifier AssetId FK
+    nvarchar_10 Interval
+    decimal_18_4 Open
+    decimal_18_4 High
+    decimal_18_4 Low
+    decimal_18_4 Close
+    decimal_18_4 AdjClose
+    bigint Volume
+    datetime2 PeriodStart
+    datetime2 FetchedAt
+  }
+
+  PRICE_LATEST {
+    uniqueidentifier Id PK
+    uniqueidentifier AssetId FK
+    decimal_18_4 Price
+    decimal_18_4 Change
+    decimal_5_4 ChangePct
+    decimal_18_4 DayHigh
+    decimal_18_4 DayLow
+    bigint Volume
+    nvarchar_10 MarketStatus
+    datetime2 Timestamp
+  }
+
+  INDICATOR_RESULTS {
+    uniqueidentifier Id PK
+    uniqueidentifier AssetId FK
+    nvarchar_30 IndicatorName
+    nvarchar_500 ParamsJson
+    nvarchar_max ValuesJson
+    nvarchar_10 Interval
+    datetime2 CalculatedAt
+  }
+
+  ALERTS {
+    uniqueidentifier Id PK
+    uniqueidentifier UserId FK
+    uniqueidentifier AssetId FK
+    nvarchar_30 AlertType
+    nvarchar_500 ConditionJson
+    nvarchar_20 Status
+    datetime2 TriggeredAt
+    datetime2 ExpiresAt
+    datetime2 CreatedAt
+  }
+
+  ALERT_NOTIFICATIONS {
+    uniqueidentifier Id PK
+    uniqueidentifier AlertId FK
+    nvarchar_20 Channel
+    nvarchar_20 Status
+    nvarchar_max Payload
+    datetime2 SentAt
+  }
+
+  CHAT_SESSIONS {
+    uniqueidentifier Id PK
+    uniqueidentifier UserId FK
+    uniqueidentifier PortfolioId FK
+    nvarchar_100 Title
+    nvarchar_max ContextSnapshot
+    datetime2 CreatedAt
+    datetime2 LastMessageAt
+  }
+
+  CHAT_MESSAGES {
+    uniqueidentifier Id PK
+    uniqueidentifier SessionId FK
+    nvarchar_10 Role
+    nvarchar_max Content
+    nvarchar_max ContextJson
+    int TokensUsed
+    decimal_8_6 CostUsd
+    datetime2 CreatedAt
+  }
+
+  AUDIT_LOG {
+    uniqueidentifier Id PK
+    uniqueidentifier UserId FK
+    nvarchar_50 EntityName
+    uniqueidentifier EntityId
+    nvarchar_20 Action
+    nvarchar_max OldValuesJson
+    nvarchar_max NewValuesJson
+    nvarchar_50 IpAddress
+    datetime2 OccurredAt
+  }
+
+  ASSETS ||--o{ PRICE_HISTORY : has
+  ASSETS ||--o| PRICE_LATEST : has
+  ASSETS ||--o{ INDICATOR_RESULTS : computed_for
+  ASSETS ||--o{ ALERTS : triggers
+  ALERTS ||--o{ ALERT_NOTIFICATIONS : generates
+  CHAT_SESSIONS ||--o{ CHAT_MESSAGES : contains
+`;
+
+const { svg } = await mermaid.render('erd2-svg', diagram);
+document.getElementById('erd2').innerHTML = svg;
+
+document.querySelectorAll('#erd2 svg.erDiagram .node').forEach(node => {
+  const fp = node.querySelector('path[d]');
+  if (!fp) return;
+  const nums = fp.getAttribute('d').match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs=[nums[0],nums[2],nums[4],nums[6]],ys=[nums[1],nums[3],nums[5],nums[7]];
+  const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+  const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx','8');
+  for(const a of['fill','stroke','stroke-width','class','style']) if(fp.hasAttribute(a)) r.setAttribute(a,fp.getAttribute(a));
+  fp.replaceWith(r);
+});
+document.querySelectorAll('#erd2 svg.erDiagram .row-rect-odd path,#erd2 svg.erDiagram .row-rect-even path').forEach(p=>p.setAttribute('stroke','none'));
+</script>
