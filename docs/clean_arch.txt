@@ -1,0 +1,16 @@
+PortfolioTracker.sln
+│
+├── src/
+│   ├── PortfolioTracker.Domain          # Saf C#, sıfır NuGet bağımlılığı
+│   ├── PortfolioTracker.Application     # MediatR, FluentValidation
+│   ├── PortfolioTracker.Infrastructure  # EF Core, Redis, HTTP clients
+│   ├── PortfolioTracker.Infrastructure.AI  # Claude/OpenAI entegrasyonu
+│   └── PortfolioTracker.WebAPI          # ASP.NET Core, SignalR, Controllers
+│
+├── tests/
+│   ├── PortfolioTracker.Domain.Tests
+│   ├── PortfolioTracker.Application.Tests   # xUnit + Moq
+│   └── PortfolioTracker.Integration.Tests   # Testcontainers
+│
+└── client/
+    └── portfolio-ui/                    # React app

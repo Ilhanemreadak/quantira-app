@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>be927666-f7d9-43e1-ad59-9b09e041dccc</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.21" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quantira.Infrastructure\Quantira.Infrastructure.csproj" />
+    <ProjectReference Include="..\Quantira.Infrastructure.AI\Quantira.Infrastructure.AI.csproj" />
+    <ProjectReference Include="..\Quantira.Application\Quantira.Application.csproj" />
+  </ItemGroup>
+
+</Project>

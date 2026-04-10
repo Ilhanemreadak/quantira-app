@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: quantira-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+
+  mongo:
+    image: mongo:7
+    container_name: quantira-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: localdev123
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  mongo-data:

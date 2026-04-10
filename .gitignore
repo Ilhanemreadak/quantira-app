@@ -416,3 +416,16 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Secrets
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/*.user.secrets.json
+
+# Node
+**/node_modules/
+**/dist/
+**/.env.local
+
+# Docker local override
+docker-compose.override.yml
