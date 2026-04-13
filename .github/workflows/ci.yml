@@ -1,0 +1,40 @@
+name: Quantira CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Quantira.sln
+
+      - name: Build
+        run: dotnet build Quantira.sln --no-restore --configuration Release
+
+      - name: Domain Tests
+        run: dotnet test tests/Quantira.Domain.Tests --no-build --configuration Release --verbosity normal
+
+      - name: Application Tests
+        run: dotnet test tests/Quantira.Application.Tests --no-build --configuration Release --verbosity normal
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cd client && npm ci
+      - run: cd client && npm run build
