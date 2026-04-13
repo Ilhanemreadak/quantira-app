@@ -11,13 +11,6 @@
     <ProjectReference Include="..\Quantira.Domain\Quantira.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Assets\" />
-    <Folder Include="Alerts\" />
-    <Folder Include="MarketData\" />
-    <Folder Include="Chat\" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
