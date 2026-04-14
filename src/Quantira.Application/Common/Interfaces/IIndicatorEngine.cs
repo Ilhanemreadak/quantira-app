@@ -1,4 +1,4 @@
-﻿using Quantira.Application.Common.Models;
+﻿using Quantira.Application.MarketData.DTOs;
 
 namespace Quantira.Application.Common.Interfaces;
 

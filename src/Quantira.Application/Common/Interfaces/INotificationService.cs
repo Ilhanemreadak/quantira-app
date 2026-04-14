@@ -1,4 +1,4 @@
-﻿using Quantira.Application.Common.Models;
+﻿using Quantira.Application.Alerts.DTOs;
 using Quantira.Application.Portfolios.DTOs;
 
 namespace Quantira.Application.Common.Interfaces;

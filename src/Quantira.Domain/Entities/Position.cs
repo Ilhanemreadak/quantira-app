@@ -130,8 +130,8 @@ public sealed class Position : Entity<Guid>
     private void ApplyBuy(Trade trade, CostMethod costMethod)
     {
         var tradeCurrency = Currency.From(trade.PriceCurrency);
-        var tradeCost = Money.Of(trade.Quantity * trade.Price, tradeCurrency)
-                               .Add(Money.Of(trade.Commission, tradeCurrency));
+        var tradeCost = Money.Of(trade.Quantity * trade.Price.Amount, tradeCurrency)
+                               .Add(Money.Of(trade.Commission.Amount, tradeCurrency));
 
         if (costMethod == CostMethod.Average || Quantity == 0)
         {
@@ -167,10 +167,10 @@ public sealed class Position : Entity<Guid>
     {
         // Split ratio encoded as quantity (new shares) at price (ratio denominator).
         // e.g. 2-for-1 split: quantity=2, price=1 → ratio=2.0
-        if (trade.Price <= 0)
+        if (trade.Price.Amount <= 0)
             throw new DomainException("Split ratio denominator must be positive.");
 
-        var splitRatio = trade.Quantity / trade.Price;
+        var splitRatio = trade.Quantity / trade.Price.Amount;
         Quantity *= splitRatio;
         AvgCostPrice = Money.Of(AvgCostPrice.Amount / splitRatio, AvgCostPrice.Currency);
         // TotalCost remains the same after a split.
