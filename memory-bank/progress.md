@@ -42,7 +42,7 @@
 - [x] `ExceptionHandlingMiddleware`, `RequestLoggingMiddleware`
 
 ## Not Done / Needs Verification
-- [ ] `Program.cs` — endpoint mapping completeness unknown (currently minimal)
+- [x] `Program.cs` startup/OpenAPI/health-check wiring verified for .NET 10 (OpenAPI + Scalar + named health checks)
 - [ ] EF Core migrations — none generated yet
 - [ ] Test projects exist but test coverage unknown
 - [ ] Frontend `client/` — scaffold exists, production-readiness unknown

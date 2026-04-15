@@ -15,8 +15,11 @@
 | MongoDB.Driver | 3.7.1 | Infrastructure |
 | Dapper | 2.1.72 | Infrastructure |
 | Microsoft.Extensions.Options.ConfigurationExtensions | 10.0.6 | Infrastructure.AI |
-| Microsoft.AspNetCore.OpenApi | 10.0.5 | WebAPI |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.5 | WebAPI |
+| Microsoft.AspNetCore.OpenApi | 10.0.6 | WebAPI |
 | Scalar.AspNetCore | 2.13.22 | WebAPI |
+| AspNetCore.HealthChecks.SqlServer | 9.0.0 | WebAPI |
+| AspNetCore.HealthChecks.Redis | 9.0.0 | WebAPI |
 
 ## Frontend
 React 19, TypeScript, Vite 8 — `client/` directory.
