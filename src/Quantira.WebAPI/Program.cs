@@ -168,6 +168,18 @@ try
     var jobManager = app.Services.GetRequiredService<IRecurringJobManager>();
     Quantira.Infrastructure.DependencyInjection.RegisterRecurringJobs(jobManager);
 
+    // ── Seed asset catalogue on first startup ────────────────────────
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider
+            .GetRequiredService<QuantiraDbContext>();
+        var logger = scope.ServiceProvider
+            .GetRequiredService<ILogger<Program>>();
+
+        await Quantira.Infrastructure.Persistence.Seed.AssetSeeder
+            .SeedAsync(context, logger);
+    }
+
     app.Run();
 }
 catch (Exception ex)

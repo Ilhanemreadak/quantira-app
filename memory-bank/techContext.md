@@ -31,6 +31,15 @@ TanStack Query/Router/Table, Zustand, React Hook Form + Zod, Recharts, lightweig
 | `Microsoft.Extensions.Caching.Redis` | Pulls `StackExchange.Redis.StrongName` v1.2.6 → type identity conflict with v2.x |
 | `Polly.Extensions.Http` | Not compatible with .NET 10 — use `Microsoft.Extensions.Http.Resilience` |
 
+## Recent Infra Notes
+- `Quantira.Infrastructure.csproj` no longer references `Polly.Extensions.Http`.
+- Asset catalogue providers are registered through DI with `IAssetProvider` implementations.
+- Named HttpClient `"Binance"` (`https://api.binance.com/`) is used for catalogue symbol ingestion.
+- Named HttpClient `"GlobalStocks"` is registered for global stock catalogue ingestion (Finnhub-style endpoint).
+- Provider placement follows feature-based infra organization:
+  - `Infrastructure/Assets` for asset catalogue providers
+  - `Infrastructure/Jobs` for Hangfire job orchestration only
+
 ## Configuration Sections (appsettings)
 - `ConnectionStrings:SqlServer` — EF Core + Hangfire
 - `ConnectionStrings:Redis` — StackExchange.Redis multiplexer
@@ -38,6 +47,7 @@ TanStack Query/Router/Table, Zustand, React Hook Form + Zod, Recharts, lightweig
 - `Claude` — bound to `ClaudeOptions` (API key, model, endpoint)
 - `Email` — bound to `EmailOptions`
 - `MarketData:GoldApiKey` — GoldApi provider header
+- `AssetProviders:GlobalStocks` — bound to `GlobalStockProviderOptions` (`Enabled`, `BaseUrl`, `ApiKey`, `DefaultCurrency`, `DefaultExchangeLabel`, `Exchanges`)
 
 ## Known Async Rules
 - Never `reader.EndOfStream` in async methods (CA2024) — use `ReadLineAsync` + null check

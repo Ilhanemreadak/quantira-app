@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Quantira.Application.Chat.Services;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Interfaces;
+using Quantira.Infrastructure.Assets;
+using Quantira.Infrastructure.Assets.Providers;
 using Quantira.Infrastructure.Cache;
 using Quantira.Infrastructure.Chat;
 using Quantira.Infrastructure.Indicators;
@@ -77,6 +79,26 @@ public static class DependencyInjection
                 configuration["MarketData:GoldApiKey"]);
         }).AddStandardResilienceHandler();
 
+        services.AddHttpClient("Binance", client =>
+        {
+            client.BaseAddress = new Uri("https://api.binance.com/");
+        }).AddStandardResilienceHandler();
+
+        services.Configure<GlobalStockProviderOptions>(
+            configuration.GetSection(GlobalStockProviderOptions.SectionName));
+
+        services.AddHttpClient("GlobalStocks", client =>
+        {
+            var configuredBaseUrl = configuration[
+                $"{GlobalStockProviderOptions.SectionName}:{nameof(GlobalStockProviderOptions.BaseUrl)}"];
+
+            var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+                ? "https://finnhub.io/"
+                : configuredBaseUrl;
+
+            client.BaseAddress = new Uri(baseUrl);
+        }).AddStandardResilienceHandler();
+
         services.AddSingleton<IMarketDataProvider, BinanceProvider>();
         services.AddSingleton<IMarketDataProvider, YahooFinanceProvider>();
         services.AddSingleton<IMarketDataProvider, GoldApiProvider>();
@@ -89,6 +111,11 @@ public static class DependencyInjection
 
         // ── Chat Session Service (stub — replace when MongoDB service is ready) ─
         services.AddScoped<IChatSessionService, StubChatSessionService>();
+
+        services.AddScoped<IAssetProvider, BinanceAssetProvider>();
+        services.AddScoped<IAssetProvider, BistAssetProvider>();
+        services.AddScoped<IAssetProvider, GlobalStockAssetProvider>();
+        services.AddScoped<AssetCatalogueUpdateJob>();
 
         // ── Hangfire ─────────────────────────────────────────────────
         services.AddHangfire(config => config
@@ -151,6 +178,15 @@ public static class DependencyInjection
             recurringJobId: "news-ingestion",
             methodCall: job => job.IngestNewsAsync(),
             cronExpression: "0 */30 * * * *",  // Every 30 minutes
+            options: new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            });
+
+        jobManager.AddOrUpdate<AssetCatalogueUpdateJob>(
+            recurringJobId: "asset-catalogue-update",
+            methodCall: job => job.RunAllUpdatesAsync(CancellationToken.None),
+            cronExpression: "0 2 * * *",   // Her gün saat 02:00 UTC
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc

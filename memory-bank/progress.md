@@ -30,6 +30,12 @@
 - [x] Market data providers: `BinanceProvider`, `YahooFinanceProvider`, `GoldApiProvider`
 - [x] `EmailNotificationService`
 - [x] `DependencyInjection.cs` — all services registered
+- [x] Asset catalogue providers moved to `Infrastructure/Assets` (`IAssetProvider`, `Providers/*`)
+- [x] `Jobs` folder cleaned to scheduled job classes only (separation of concerns)
+- [x] `AssetCatalogueUpdateJob` refactored to provider-loop orchestration with provider-failure isolation
+- [x] Asset catalogue job now performs insert-only symbol diff + transactional `AddRangeAsync`
+- [x] `GlobalStockAssetProvider` added with config-driven API key skeleton (Finnhub-style REST)
+- [x] DI extended with `GlobalStockProviderOptions` binding and named HttpClient `"GlobalStocks"`
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed
@@ -47,6 +53,7 @@
 - [ ] Test projects exist but test coverage unknown
 - [ ] Frontend `client/` — scaffold exists, production-readiness unknown
 - [ ] Backend ↔ Frontend API contract alignment not verified
+- [ ] Full solution build verification while WebAPI process is stopped (current failure was file-lock from running `Quantira.WebAPI` process)
 
 ## Known Issues
 - Some docs in `docs/` reference old project name `PortfolioTracker`

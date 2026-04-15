@@ -1,4 +1,4 @@
-﻿using Quantira.Domain.Common;
+using Quantira.Domain.Common;
 using Quantira.Domain.Enums;
 using Quantira.Domain.Events;
 using Quantira.Domain.Exceptions;
@@ -120,6 +120,39 @@ public sealed class Asset : AggregateRoot<Guid>
 
         DataProviderKey = key.Trim();
         MarkUpdated();
+    }
+
+    /// <summary>
+    /// Updates catalogue-managed metadata when external provider mapping
+    /// changes (e.g., display name normalization, provider symbol remap).
+    /// Returns <c>true</c> if any field changed.
+    /// </summary>
+    public bool UpdateCatalogueMetadata(string name, string? dataProviderKey)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("Asset name cannot be empty.");
+
+        var normalizedName = name.Trim();
+        var normalizedProviderKey = dataProviderKey?.Trim();
+
+        var hasChanged = false;
+
+        if (!string.Equals(Name, normalizedName, StringComparison.Ordinal))
+        {
+            Name = normalizedName;
+            hasChanged = true;
+        }
+
+        if (!string.Equals(DataProviderKey, normalizedProviderKey, StringComparison.Ordinal))
+        {
+            DataProviderKey = normalizedProviderKey;
+            hasChanged = true;
+        }
+
+        if (hasChanged)
+            MarkUpdated();
+
+        return hasChanged;
     }
 
     /// <summary>

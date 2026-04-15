@@ -38,6 +38,23 @@ HTTP Request
 - Priority: Binance → YahooFinance → GoldApi
 - Each provider is a typed `HttpClient` with `AddStandardResilienceHandler()`
 
+### Asset Catalogue Providers
+- Asset catalogue refresh now follows provider pattern via `IAssetProvider`
+- `AssetCatalogueUpdateJob` iterates `IEnumerable<IAssetProvider>` (Open/Closed)
+- Folder boundaries:
+  - `Infrastructure/Jobs` contains only scheduled orchestration jobs
+  - `Infrastructure/Assets` contains asset ingestion abstractions/providers
+- Per-provider fault isolation: each provider runs in `try/catch`; failure logs `Error` and loop continues
+- Insert strategy:
+  - Query existing symbols by `AssetType`
+  - Compute diff in memory
+  - Insert only missing symbols (`AddRangeAsync`) inside `IDbContextTransaction`
+  - Skip updates for existing rows in catalogue job (insert-only ingestion)
+- Structured logs cover start/fetch/diff/transaction/result per provider
+- Global stock ingestion is added via `GlobalStockAssetProvider` (Finnhub-style REST skeleton)
+  - Config section: `AssetProviders:GlobalStocks`
+  - Supports multi-exchange pulls via configurable `Exchanges`
+
 ### AI Integration
 - `IAIService` defined in Application, implemented by `ClaudeAIService` in Infrastructure.AI
 - `IPortfolioContextBuilder` assembles portfolio snapshot → injected into Claude prompt
