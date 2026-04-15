@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Microsoft.Extensions.Caching.Redis;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Quantira.Application.Common.Interfaces;
@@ -52,7 +51,7 @@ public sealed class RedisCacheService : ICacheService
             if (value.IsNullOrEmpty)
                 return default;
 
-            return JsonSerializer.Deserialize<T>(value!, JsonOptions);
+            return JsonSerializer.Deserialize<T>((string)value!, JsonOptions);
         }
         catch (Exception ex)
         {
@@ -117,4 +116,34 @@ public sealed class RedisCacheService : ICacheService
                 .Keys(pattern: pattern)
                 .ToArray();
 
-            if
+            if (keys.Length > 0)
+                await _database.KeyDeleteAsync(keys);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[Redis] REMOVE BY PREFIX failed for prefix {Prefix}.",
+                prefix);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ExistsAsync(
+        string key,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _database.KeyExistsAsync(BuildKey(key));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[Redis] EXISTS failed for key {Key} — returning false.",
+                key);
+            return false;
+        }
+    }
+
+    private string BuildKey(string key) => $"{_options.KeyPrefix}:{key}";
+}
