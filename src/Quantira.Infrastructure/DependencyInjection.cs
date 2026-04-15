@@ -3,9 +3,12 @@ using Hangfire.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Quantira.Application.Chat.Services;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Interfaces;
 using Quantira.Infrastructure.Cache;
+using Quantira.Infrastructure.Chat;
+using Quantira.Infrastructure.Indicators;
 using Quantira.Infrastructure.Jobs;
 using Quantira.Infrastructure.MarketData;
 using Quantira.Infrastructure.MarketData.Providers;
@@ -80,6 +83,12 @@ public static class DependencyInjection
 
         services.AddSingleton<MarketDataProviderFactory>();
         services.AddScoped<IMarketDataService, MarketDataService>();
+
+        // ── Indicator Engine (stub — replace when indicators are implemented) ─
+        services.AddScoped<IIndicatorEngine, StubIndicatorEngine>();
+
+        // ── Chat Session Service (stub — replace when MongoDB service is ready) ─
+        services.AddScoped<IChatSessionService, StubChatSessionService>();
 
         // ── Hangfire ─────────────────────────────────────────────────
         services.AddHangfire(config => config

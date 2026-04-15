@@ -6,13 +6,11 @@ namespace Quantira.Domain.ValueObjects;
 /// Represents an ISO 4217 currency code (e.g. "USD", "TRY", "EUR").
 /// Encapsulates validation so that invalid currency codes can never
 /// exist in the domain. Stored as an uppercase, trimmed three-letter string.
-/// Used as a component of <see cref="Money"/> to ensure currency-aware
-/// arithmetic and prevent accidental cross-currency operations.
 /// </summary>
 public sealed class Currency : ValueObject
 {
     /// <summary>The ISO 4217 three-letter currency code in uppercase.</summary>
-    public string Code { get; }
+    public string Code { get; private set; } = default!;
 
     public static readonly Currency TRY = new("TRY");
     public static readonly Currency USD = new("USD");
@@ -20,6 +18,9 @@ public sealed class Currency : ValueObject
     public static readonly Currency GBP = new("GBP");
     public static readonly Currency BTC = new("BTC");
     public static readonly Currency ETH = new("ETH");
+
+    // Parameterless constructor required by EF Core for owned entity materialization.
+    private Currency() { }
 
     private Currency(string code) => Code = code;
 
@@ -33,7 +34,8 @@ public sealed class Currency : ValueObject
     public static Currency From(string code)
     {
         var normalized = code?.Trim().ToUpperInvariant()
-            ?? throw new ArgumentException("Currency code cannot be null.", nameof(code));
+            ?? throw new ArgumentException(
+                "Currency code cannot be null.", nameof(code));
 
         if (normalized.Length != 3 || !normalized.All(char.IsLetter))
             throw new ArgumentException(

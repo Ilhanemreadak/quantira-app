@@ -14,10 +14,13 @@ namespace Quantira.Domain.ValueObjects;
 public sealed class Money : ValueObject
 {
     /// <summary>The monetary amount. Always non-negative for cost/price contexts.</summary>
-    public decimal Amount { get; }
+    public decimal Amount { get; private set; }
 
     /// <summary>The currency this amount is denominated in.</summary>
-    public Currency Currency { get; }
+    public Currency Currency { get; private set; } = default!;
+
+    // Parameterless constructor required by EF Core for owned entity materialization.
+    private Money() { }
 
     private Money(decimal amount, Currency currency)
     {
@@ -36,7 +39,8 @@ public sealed class Money : ValueObject
     public static Money Of(decimal amount, Currency currency)
     {
         if (amount < 0)
-            throw new DomainException($"Money amount cannot be negative. Received: {amount}");
+            throw new DomainException(
+                $"Money amount cannot be negative. Received: {amount}");
 
         return new Money(amount, currency);
     }
@@ -79,18 +83,15 @@ public sealed class Money : ValueObject
 
     /// <summary>
     /// Converts this amount to a target currency using the provided exchange rate.
-    /// The rate represents how many units of <paramref name="targetCurrency"/>
-    /// equal one unit of this object's currency.
     /// </summary>
-    /// <param name="targetCurrency">The currency to convert to.</param>
-    /// <param name="exchangeRate">The conversion rate. Must be greater than zero.</param>
     /// <exception cref="DomainException">
     /// Thrown when <paramref name="exchangeRate"/> is zero or negative.
     /// </exception>
     public Money ConvertTo(Currency targetCurrency, decimal exchangeRate)
     {
         if (exchangeRate <= 0)
-            throw new DomainException($"Exchange rate must be positive. Received: {exchangeRate}");
+            throw new DomainException(
+                $"Exchange rate must be positive. Received: {exchangeRate}");
 
         return new Money(Amount * exchangeRate, targetCurrency);
     }
