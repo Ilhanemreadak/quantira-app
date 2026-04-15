@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quantira.Application.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quantira.Integration.Tests", "tests\Quantira.Integration.Tests\Quantira.Integration.Tests.csproj", "{28E9652A-AFAC-4733-888D-19DAC1232CDA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quantira.Domain.Tests", "tests\Quantira.Domain.Tests\Quantira.Domain.Tests.csproj", "{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -115,6 +117,18 @@ Global
 		{28E9652A-AFAC-4733-888D-19DAC1232CDA}.Release|x64.Build.0 = Release|Any CPU
 		{28E9652A-AFAC-4733-888D-19DAC1232CDA}.Release|x86.ActiveCfg = Release|Any CPU
 		{28E9652A-AFAC-4733-888D-19DAC1232CDA}.Release|x86.Build.0 = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|x64.Build.0 = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Debug|x86.Build.0 = Debug|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|x64.ActiveCfg = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|x64.Build.0 = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|x86.ActiveCfg = Release|Any CPU
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,5 +141,9 @@ Global
 		{EA7EDF06-30A5-4DA4-BC71-64C967520096} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{62DD046A-56A6-422F-BD73-EC111FA20D08} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{28E9652A-AFAC-4733-888D-19DAC1232CDA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{30F35B4B-2D42-9C1B-D083-BD66EBA9708D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3AA572F3-4DA6-4CC0-BC78-F1FAFE695811}
 	EndGlobalSection
 EndGlobal
