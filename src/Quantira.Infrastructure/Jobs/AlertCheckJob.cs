@@ -17,17 +17,20 @@ namespace Quantira.Infrastructure.Jobs;
 public sealed class AlertCheckJob
 {
     private readonly IAlertRepository _alertRepository;
+    private readonly IAssetRepository _assetRepository;
     private readonly ICacheService _cache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AlertCheckJob> _logger;
 
     public AlertCheckJob(
         IAlertRepository alertRepository,
+        IAssetRepository assetRepository,
         ICacheService cache,
         IUnitOfWork unitOfWork,
         ILogger<AlertCheckJob> logger)
     {
         _alertRepository = alertRepository;
+        _assetRepository = assetRepository;
         _cache = cache;
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -46,6 +49,21 @@ public sealed class AlertCheckJob
             "[AlertCheckJob] Evaluating {Count} active alerts.",
             activeAlerts.Count);
 
+        // Build a symbol map once — avoids N+1 asset lookups per cycle.
+        var assetIds = activeAlerts
+            .Select(a => a.AssetId)
+            .Distinct()
+            .ToList();
+
+        var symbolMap = new Dictionary<Guid, string>();
+
+        foreach (var assetId in assetIds)
+        {
+            var asset = await _assetRepository.GetByIdAsync(assetId);
+            if (asset is not null)
+                symbolMap[assetId] = asset.Symbol;
+        }
+
         var triggeredCount = 0;
         var expiredCount = 0;
 
@@ -54,7 +72,8 @@ public sealed class AlertCheckJob
             try
             {
                 // Check expiry first.
-                if (alert.ExpiresAt.HasValue && alert.ExpiresAt.Value <= DateTime.UtcNow)
+                if (alert.ExpiresAt.HasValue
+                    && alert.ExpiresAt.Value <= DateTime.UtcNow)
                 {
                     alert.Expire();
                     _alertRepository.Update(alert);
@@ -62,9 +81,13 @@ public sealed class AlertCheckJob
                     continue;
                 }
 
-                // Get latest price from Redis cache.
-                var cacheKey = $"price:{alert.AssetId}";
-                var priceLatest = await _cache.GetAsync<PriceLatestDto> (cacheKey);
+                // Resolve symbol from map.
+                if (!symbolMap.TryGetValue(alert.AssetId, out var symbol))
+                    continue;
+
+                // Cache key must match MarketDataService write pattern:
+                var cacheKey = $"price:{symbol.ToUpperInvariant()}";
+                var priceLatest = await _cache.GetAsync<PriceLatestDto>(cacheKey);
 
                 if (priceLatest is null) continue;
 
@@ -111,7 +134,7 @@ public sealed class AlertCheckJob
                     condition.TryGetProperty("threshold", out var belowEl)
                     && currentPrice < belowEl.GetDecimal(),
 
-                _ => false // Indicator and sentiment alerts handled by dedicated jobs.
+                _ => false
             };
         }
         catch

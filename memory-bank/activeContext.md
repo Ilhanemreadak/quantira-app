@@ -38,6 +38,14 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - Added named HttpClient `"GlobalStocks"` with resilience handler
   - Bound `GlobalStockProviderOptions` from configuration
 - WebAPI appsettings updated with `AssetProviders:GlobalStocks` section (base URL, API key placeholder, exchange list).
+- Market data batch flow was hardened for performance and DbContext safety:
+  - Added `IAssetRepository.GetBySymbolsAsync(...)` contract for single-query symbol batch reads
+  - Implemented repository-level symbol normalization (`Trim().ToUpperInvariant()`) + `IN` query in `AssetRepository`
+  - Refactored `MarketDataService.GetBatchLatestAsync(...)` to remove N+1 symbol lookups
+  - Provider calls now run in parallel only after DB phase completes
+  - Added provider-group `try/catch` isolation so one failed provider does not fail the entire batch
+  - Cache writes for batch results are normalized (`price:{SYMBOL}`) and awaited in parallel
+- Full solution build completed successfully after refactor (`dotnet build Quantira.sln`).
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer

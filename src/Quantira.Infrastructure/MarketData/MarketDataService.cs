@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Application.MarketData.DTOs;
 using Quantira.Domain.Interfaces;
@@ -81,37 +81,63 @@ public sealed class MarketDataService : IMarketDataService
         IEnumerable<string> symbols,
         CancellationToken cancellationToken = default)
     {
-        var symbolList = symbols.ToList();
-        var results = new List<PriceLatestDto>(symbolList.Count);
+        var symbolList = symbols
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim().ToUpperInvariant())
+            .Distinct()
+            .ToList();
 
-        // Group symbols by asset type so each provider gets one batched call.
-        var assets = await Task.WhenAll(
-            symbolList.Select(s =>
-                _assetRepository.GetBySymbolAsync(s, cancellationToken)));
+        if (symbolList.Count == 0)
+            return [];
 
-        var grouped = assets
-            .Where(a => a is not null)
-            .GroupBy(a => (a!.AssetType, a.Exchange));
+        var assets = await _assetRepository.GetBySymbolsAsync(symbolList, cancellationToken);
 
-        foreach (var group in grouped)
-        {
-            var provider = _factory.GetProvider(group.Key.AssetType, group.Key.Exchange);
-            var providerKeys = group
-                .Select(a => a!.DataProviderKey ?? a.Symbol)
-                .ToList();
+        if (assets.Count == 0)
+            return [];
 
-            var batch = await provider.GetBatchLatestAsync(providerKeys, cancellationToken);
+        var groupedAssets = assets
+            .GroupBy(a => (a.AssetType, a.Exchange))
+            .ToList();
 
-            foreach (var dto in batch)
+        var providerTasks = groupedAssets
+            .Select(async group =>
             {
-                results.Add(dto);
-                await _cache.SetAsync(
-                    $"price:{dto.Symbol}",
-                    dto,
-                    PriceTtl,
-                    cancellationToken);
-            }
-        }
+                try
+                {
+                    var provider = _factory.GetProvider(group.Key.AssetType, group.Key.Exchange);
+                    var providerKeys = group
+                        .Select(a => a.DataProviderKey ?? a.Symbol)
+                        .ToList();
+
+                    return await provider.GetBatchLatestAsync(providerKeys, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "[MarketData] Batch latest failed for provider group {AssetType}/{Exchange}.",
+                        group.Key.AssetType,
+                        group.Key.Exchange);
+
+                    return (IReadOnlyList<PriceLatestDto>)[];
+                }
+            })
+            .ToList();
+
+        var providerResults = await Task.WhenAll(providerTasks);
+
+        var results = providerResults
+            .SelectMany(batch => batch)
+            .ToList();
+
+        var cacheTasks = results
+            .Select(dto => _cache.SetAsync(
+                $"price:{dto.Symbol.ToUpperInvariant()}",
+                dto,
+                PriceTtl,
+                cancellationToken));
+
+        await Task.WhenAll(cacheTasks);
 
         return results.AsReadOnly();
     }

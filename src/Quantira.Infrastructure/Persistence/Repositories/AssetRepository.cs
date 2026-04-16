@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Enums;
 using Quantira.Domain.Interfaces;
@@ -52,6 +52,25 @@ public sealed class AssetRepository : IAssetRepository
     {
         return await _context.Assets
             .Where(a => a.IsActive)
+            .OrderBy(a => a.Symbol)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Asset>> GetBySymbolsAsync(
+        IEnumerable<string> symbols,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedSymbols = symbols
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim().ToUpperInvariant())
+            .Distinct()
+            .ToList();
+
+        if (normalizedSymbols.Count == 0)
+            return [];
+
+        return await _context.Assets
+            .Where(a => a.IsActive && normalizedSymbols.Contains(a.Symbol))
             .OrderBy(a => a.Symbol)
             .ToListAsync(cancellationToken);
     }

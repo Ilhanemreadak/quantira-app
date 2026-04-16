@@ -36,6 +36,9 @@
 - [x] Asset catalogue job now performs insert-only symbol diff + transactional `AddRangeAsync`
 - [x] `GlobalStockAssetProvider` added with config-driven API key skeleton (Finnhub-style REST)
 - [x] DI extended with `GlobalStockProviderOptions` binding and named HttpClient `"GlobalStocks"`
+- [x] `IAssetRepository.GetBySymbolsAsync(...)` added for single-query symbol batch reads
+- [x] `MarketDataService.GetBatchLatestAsync(...)` refactored to remove N+1 lookups and run provider calls in parallel safely
+- [x] Provider-level fault isolation added in market data batch flow (`try/catch` per provider group)
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed
@@ -53,7 +56,7 @@
 - [ ] Test projects exist but test coverage unknown
 - [ ] Frontend `client/` — scaffold exists, production-readiness unknown
 - [ ] Backend ↔ Frontend API contract alignment not verified
-- [ ] Full solution build verification while WebAPI process is stopped (current failure was file-lock from running `Quantira.WebAPI` process)
+- [x] Full solution build verification while WebAPI process is stopped (`dotnet build Quantira.sln` succeeded)
 
 ## Known Issues
 - Some docs in `docs/` reference old project name `PortfolioTracker`
