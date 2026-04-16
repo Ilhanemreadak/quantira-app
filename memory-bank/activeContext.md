@@ -51,6 +51,12 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - Refactored `AlertCheckJob` to replace per-id asset fetch loop with single batched DB call
   - Refactored `MarketDataRefreshJob` SignalR publish loop to parallel `Task.WhenAll` broadcasting
   - Verified solution builds successfully after these refactors (`dotnet build Quantira.sln`)
+- Further scalability hardening was applied for the remaining roadmap items:
+  - `AssetCatalogueUpdateJob` now normalizes provider symbols and performs chunked symbol matching (`SymbolLookupChunkSize`) instead of loading all existing symbols per type
+  - `AssetCatalogueUpdateJob` inserts are chunked (`InsertChunkSize`) with change tracker clearing between batches to reduce memory pressure on large catalog updates
+  - `NewsIngestionJob` now uses bounded concurrency (`SemaphoreSlim`, `MaxParallelism`) with per-symbol fault isolation and cycle-level success/failure metrics
+  - `NewsIngestionJob` signature now propagates `CancellationToken` through repository/cache operations
+  - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer
@@ -64,3 +70,4 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
 - Implement real BIST source adapter (MKK/KAP CSV or licensed feed) behind `BistAssetProvider`
 - Add provider integration tests for `AssetCatalogueUpdateJob` diff/transaction behavior and provider-failure isolation
 - Add load/perf tests for Hangfire cycles (`MarketDataRefreshJob`, `AlertCheckJob`) under higher symbol/alert counts
+- Add load/perf tests for `AssetCatalogueUpdateJob` chunk thresholds and tune `SymbolLookupChunkSize`/`InsertChunkSize` with production-like data

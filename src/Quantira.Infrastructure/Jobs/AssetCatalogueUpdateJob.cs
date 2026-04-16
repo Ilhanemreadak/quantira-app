@@ -10,6 +10,9 @@ namespace Quantira.Infrastructure.Jobs;
 
 public sealed class AssetCatalogueUpdateJob
 {
+    private const int SymbolLookupChunkSize = 1000;
+    private const int InsertChunkSize = 500;
+
     private readonly QuantiraDbContext _context;
     private readonly IEnumerable<IAssetProvider> _providers;
     private readonly ILogger<AssetCatalogueUpdateJob> _logger;
@@ -60,25 +63,53 @@ public sealed class AssetCatalogueUpdateJob
                     continue;
                 }
 
-                var existingSymbols = await _context.Assets
-                    .AsNoTracking()
-                    .Where(asset => asset.AssetType == provider.SupportedType)
-                    .Select(asset => asset.Symbol)
-                    .ToListAsync(cancellationToken);
+                var fetchedBySymbol = fetchedAssets
+                    .Where(asset => !string.IsNullOrWhiteSpace(asset.Symbol))
+                    .GroupBy(
+                        asset => asset.Symbol.Trim().ToUpperInvariant(),
+                        StringComparer.Ordinal)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.First(),
+                        StringComparer.Ordinal);
 
-                var existingSymbolSet = existingSymbols
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (fetchedBySymbol.Count == 0)
+                {
+                    _logger.LogInformation(
+                        "[AssetCatalogueUpdateJob] Provider {Provider} has no valid symbols after normalization. Skipping.",
+                        providerName);
+                    continue;
+                }
 
-                var newAssets = fetchedAssets
-                    .Where(asset => !existingSymbolSet.Contains(asset.Symbol))
-                    .GroupBy(asset => asset.Symbol, StringComparer.OrdinalIgnoreCase)
-                    .Select(group => group.First())
+                var existingSymbolSet = new HashSet<string>(StringComparer.Ordinal);
+
+                foreach (var symbolChunk in fetchedBySymbol.Keys.Chunk(SymbolLookupChunkSize))
+                {
+                    var chunkList = symbolChunk.ToList();
+
+                    var existingSymbols = await _context.Assets
+                        .AsNoTracking()
+                        .Where(asset =>
+                            asset.AssetType == provider.SupportedType
+                            && asset.IsActive
+                            && chunkList.Contains(asset.Symbol))
+                        .Select(asset => asset.Symbol)
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var symbol in existingSymbols)
+                        existingSymbolSet.Add(symbol);
+                }
+
+                var newAssets = fetchedBySymbol
+                    .Where(pair => !existingSymbolSet.Contains(pair.Key))
+                    .Select(pair => pair.Value)
                     .ToList();
 
                 _logger.LogInformation(
-                    "[AssetCatalogueUpdateJob] Provider {Provider} diff completed. Existing: {ExistingCount}, New: {NewCount}.",
+                    "[AssetCatalogueUpdateJob] Provider {Provider} diff completed. FetchedDistinct: {FetchedDistinct}, ExistingMatched: {ExistingMatched}, New: {NewCount}.",
                     providerName,
-                    existingSymbols.Count,
+                    fetchedBySymbol.Count,
+                    existingSymbolSet.Count,
                     newAssets.Count);
 
                 if (newAssets.Count == 0)
@@ -94,8 +125,15 @@ public sealed class AssetCatalogueUpdateJob
 
                 try
                 {
-                    await _context.Assets.AddRangeAsync(newAssets, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
+                    foreach (var insertChunk in newAssets.Chunk(InsertChunkSize))
+                    {
+                        var batch = insertChunk.ToList();
+
+                        await _context.Assets.AddRangeAsync(batch, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
+                        _context.ChangeTracker.Clear();
+                    }
+
                     await transaction.CommitAsync(cancellationToken);
 
                     var insertedSymbols = string.Join(", ", newAssets.Select(asset => asset.Symbol));

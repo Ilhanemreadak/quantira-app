@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Interfaces;
 
@@ -23,6 +23,7 @@ public sealed class NewsIngestionJob
 
     private static readonly TimeSpan NewsTtl = TimeSpan.FromMinutes(35);
     private const int MaxSymbols = 50;
+    private const int MaxParallelism = 5;
 
     public NewsIngestionJob(
         IAssetRepository assetRepository,
@@ -39,52 +40,82 @@ public sealed class NewsIngestionJob
     /// <summary>
     /// Fetches and enriches news for the most actively tracked symbols.
     /// </summary>
-    public async Task IngestNewsAsync()
+    public async Task IngestNewsAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[NewsIngestionJob] Starting news ingestion cycle.");
 
-        var assets = await _assetRepository.GetAllActiveAsync();
+        var assets = await _assetRepository.GetAllActiveAsync(cancellationToken);
 
         var symbols = assets
+            .Select(a => a.Symbol.Trim().ToUpperInvariant())
+            .Distinct()
             .Take(MaxSymbols)
-            .Select(a => a.Symbol)
             .ToList();
 
-        var processed = 0;
-
-        foreach (var symbol in symbols)
+        if (symbols.Count == 0)
         {
-            try
-            {
-                // Placeholder: replace with real NewsAPI or RSS feed call.
-                // For now we log the intent and cache an empty result.
-                var cacheKey = $"news:{symbol}";
-
-                _logger.LogDebug(
-                    "[NewsIngestionJob] Processing news for {Symbol}", symbol);
-
-                // TODO: Call NewsAPI provider, run sentiment analysis,
-                // cache enriched articles.
-                // var articles = await _newsProvider.GetArticlesAsync(symbol);
-                // foreach (var article in articles)
-                // {
-                //     var sentiment = await _aiService.AnalyzeSentimentAsync(
-                //         article.Content, symbol);
-                //     enriched.Add(article with { Sentiment = sentiment });
-                // }
-                // await _cache.SetAsync(cacheKey, enriched, NewsTtl);
-
-                processed++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "[NewsIngestionJob] Failed to ingest news for {Symbol}", symbol);
-            }
+            _logger.LogInformation("[NewsIngestionJob] No active symbols to process.");
+            return;
         }
 
+        using var semaphore = new SemaphoreSlim(MaxParallelism);
+
+        var ingestionTasks = symbols
+            .Select(symbol => IngestSymbolAsync(symbol, semaphore, cancellationToken))
+            .ToList();
+
+        var ingestionResults = await Task.WhenAll(ingestionTasks);
+
+        var processed = ingestionResults.Count(result => result);
+        var failed = ingestionResults.Length - processed;
+
         _logger.LogInformation(
-            "[NewsIngestionJob] Cycle complete. Processed {Count}/{Total} symbols.",
-            processed, symbols.Count);
+            "[NewsIngestionJob] Cycle complete. Processed {Processed}/{Total} symbols. Failed: {Failed}.",
+            processed,
+            symbols.Count,
+            failed);
+    }
+
+    private async Task<bool> IngestSymbolAsync(
+        string symbol,
+        SemaphoreSlim semaphore,
+        CancellationToken cancellationToken)
+    {
+        await semaphore.WaitAsync(cancellationToken);
+
+        try
+        {
+            // Placeholder: replace with real NewsAPI or RSS feed call.
+            // For now we cache a lightweight placeholder payload so downstream
+            // consumers can rely on key presence and TTL behavior.
+            var cacheKey = $"news:{symbol}";
+
+            _logger.LogDebug(
+                "[NewsIngestionJob] Processing news for {Symbol}", symbol);
+
+            var payload = new
+            {
+                Symbol = symbol,
+                GeneratedAtUtc = DateTime.UtcNow,
+                Items = Array.Empty<object>()
+            };
+
+            await _cache.SetAsync(cacheKey, payload, NewsTtl, cancellationToken);
+
+            // Keep AI service dependency warm and ready for real provider wiring.
+            _ = _aiService;
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[NewsIngestionJob] Failed to ingest news for {Symbol}", symbol);
+            return false;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 }

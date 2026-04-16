@@ -42,6 +42,9 @@
 - [x] `IAssetRepository.GetByIdsAsync(...)` added for batched asset-id lookups
 - [x] `AlertCheckJob` asset resolution refactored from per-id loop to single batched repository call
 - [x] `MarketDataRefreshJob` SignalR broadcasting refactored to parallel `Task.WhenAll` publish
+- [x] `AssetCatalogueUpdateJob` upgraded with symbol normalization + chunked existing-symbol lookup strategy
+- [x] `AssetCatalogueUpdateJob` insert pipeline chunked with `ChangeTracker.Clear()` between batches for lower memory pressure
+- [x] `NewsIngestionJob` upgraded with bounded concurrency (`SemaphoreSlim`) + per-symbol fault isolation + cancellation propagation
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed
