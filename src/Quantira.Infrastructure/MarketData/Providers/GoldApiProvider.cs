@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Quantira.Application.MarketData.DTOs;
@@ -64,6 +64,15 @@ public sealed class GoldApiProvider : IMarketDataProvider
                 Volume: null,
                 MarketStatus: "OPEN",
                 Timestamp: DateTime.UtcNow);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            _logger.LogWarning(
+                ex,
+                "[GoldApi] Forbidden (403) for symbol {Symbol}. Check MarketData:GoldApiKey, plan quota, or symbol entitlement.",
+                symbol);
+
+            return EmptyDto(symbol);
         }
         catch (Exception ex)
         {

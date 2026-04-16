@@ -38,6 +38,33 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - Added named HttpClient `"GlobalStocks"` with resilience handler
   - Bound `GlobalStockProviderOptions` from configuration
 - WebAPI appsettings updated with `AssetProviders:GlobalStocks` section (base URL, API key placeholder, exchange list).
+- Market data batch flow was hardened for performance and DbContext safety:
+  - Added `IAssetRepository.GetBySymbolsAsync(...)` contract for single-query symbol batch reads
+  - Implemented repository-level symbol normalization (`Trim().ToUpperInvariant()`) + `IN` query in `AssetRepository`
+  - Refactored `MarketDataService.GetBatchLatestAsync(...)` to remove N+1 symbol lookups
+  - Provider calls now run in parallel only after DB phase completes
+  - Added provider-group `try/catch` isolation so one failed provider does not fail the entire batch
+  - Cache writes for batch results are normalized (`price:{SYMBOL}`) and awaited in parallel
+- Full solution build completed successfully after refactor (`dotnet build Quantira.sln`).
+- Additional job-level performance hardening was applied after cross-checking similar patterns:
+  - Added `IAssetRepository.GetByIdsAsync(...)` for batch lookup by asset id
+  - Refactored `AlertCheckJob` to replace per-id asset fetch loop with single batched DB call
+  - Refactored `MarketDataRefreshJob` SignalR publish loop to parallel `Task.WhenAll` broadcasting
+  - Verified solution builds successfully after these refactors (`dotnet build Quantira.sln`)
+- Further scalability hardening was applied for the remaining roadmap items:
+  - `AssetCatalogueUpdateJob` now normalizes provider symbols and performs chunked symbol matching (`SymbolLookupChunkSize`) instead of loading all existing symbols per type
+  - `AssetCatalogueUpdateJob` inserts are chunked (`InsertChunkSize`) with change tracker clearing between batches to reduce memory pressure on large catalog updates
+  - `NewsIngestionJob` now uses bounded concurrency (`SemaphoreSlim`, `MaxParallelism`) with per-symbol fault isolation and cycle-level success/failure metrics
+  - `NewsIngestionJob` signature now propagates `CancellationToken` through repository/cache operations
+  - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
+- Market data resilience hardening was added for provider throttling/auth issues:
+  - `MarketDataService.GetBatchLatestAsync(...)` now applies provider-scoped in-memory 429 circuit breaker logic
+  - Threshold: 3 consecutive `429 TooManyRequests`; cooldown: 5 minutes per provider
+  - During cooldown, provider calls are skipped with warning logs to avoid unnecessary external pressure
+  - `YahooFinanceProvider` now rethrows `HttpRequestException` on 429 so circuit breaker can observe failures
+  - `GoldApiProvider` now logs explicit diagnostics for `403 Forbidden` (key/quota/entitlement hints)
+  - Hangfire `market-data-refresh` cron interval was relaxed from every 15 seconds to every 1 minute
+  - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer
@@ -50,3 +77,5 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
 - Confirm frontend `client/` API base URL is aligned with WebAPI launch settings
 - Implement real BIST source adapter (MKK/KAP CSV or licensed feed) behind `BistAssetProvider`
 - Add provider integration tests for `AssetCatalogueUpdateJob` diff/transaction behavior and provider-failure isolation
+- Add load/perf tests for Hangfire cycles (`MarketDataRefreshJob`, `AlertCheckJob`) under higher symbol/alert counts
+- Add load/perf tests for `AssetCatalogueUpdateJob` chunk thresholds and tune `SymbolLookupChunkSize`/`InsertChunkSize` with production-like data

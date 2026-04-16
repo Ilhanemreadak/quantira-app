@@ -1,4 +1,4 @@
-﻿using Quantira.Domain.Entities;
+using Quantira.Domain.Entities;
 using Quantira.Domain.Enums;
 
 namespace Quantira.Domain.Interfaces;
@@ -18,6 +18,14 @@ public interface IAssetRepository
     Task<Asset?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves active assets by their identifiers in a single database call.
+    /// Used by background jobs to avoid N+1 lookups.
+    /// </summary>
+    Task<IReadOnlyList<Asset>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves an asset by its ticker symbol (case-insensitive).
     /// Returns <c>null</c> if the symbol is not tracked in Quantira.
     /// Used during trade entry to resolve user-typed symbols to asset records.
@@ -35,6 +43,15 @@ public interface IAssetRepository
     /// Used for bulk operations such as the nightly price history archival job.
     /// </summary>
     Task<IReadOnlyList<Asset>> GetAllActiveAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns all active assets that match the provided symbols.
+    /// Symbol comparison is expected to be case-normalized by the repository.
+    /// Used by market-data batch flows to avoid N+1 symbol lookups.
+    /// </summary>
+    Task<IReadOnlyList<Asset>> GetBySymbolsAsync(
+        IEnumerable<string> symbols,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns <c>true</c> if an asset with the given symbol already exists.

@@ -36,6 +36,19 @@
 - [x] Asset catalogue job now performs insert-only symbol diff + transactional `AddRangeAsync`
 - [x] `GlobalStockAssetProvider` added with config-driven API key skeleton (Finnhub-style REST)
 - [x] DI extended with `GlobalStockProviderOptions` binding and named HttpClient `"GlobalStocks"`
+- [x] `IAssetRepository.GetBySymbolsAsync(...)` added for single-query symbol batch reads
+- [x] `MarketDataService.GetBatchLatestAsync(...)` refactored to remove N+1 lookups and run provider calls in parallel safely
+- [x] Provider-level fault isolation added in market data batch flow (`try/catch` per provider group)
+- [x] `IAssetRepository.GetByIdsAsync(...)` added for batched asset-id lookups
+- [x] `AlertCheckJob` asset resolution refactored from per-id loop to single batched repository call
+- [x] `MarketDataRefreshJob` SignalR broadcasting refactored to parallel `Task.WhenAll` publish
+- [x] `AssetCatalogueUpdateJob` upgraded with symbol normalization + chunked existing-symbol lookup strategy
+- [x] `AssetCatalogueUpdateJob` insert pipeline chunked with `ChangeTracker.Clear()` between batches for lower memory pressure
+- [x] `NewsIngestionJob` upgraded with bounded concurrency (`SemaphoreSlim`) + per-symbol fault isolation + cancellation propagation
+- [x] `MarketDataService` batch flow upgraded with provider-scoped 429 circuit breaker (3 consecutive 429 -> 5 min cooldown)
+- [x] `YahooFinanceProvider` updated to surface 429 as `HttpRequestException` for circuit-breaker handling
+- [x] `GoldApiProvider` enriched with explicit 403 diagnostics (key/quota/entitlement guidance)
+- [x] `market-data-refresh` recurring job interval relaxed from 15s to 60s
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed
@@ -53,7 +66,7 @@
 - [ ] Test projects exist but test coverage unknown
 - [ ] Frontend `client/` — scaffold exists, production-readiness unknown
 - [ ] Backend ↔ Frontend API contract alignment not verified
-- [ ] Full solution build verification while WebAPI process is stopped (current failure was file-lock from running `Quantira.WebAPI` process)
+- [x] Full solution build verification while WebAPI process is stopped (`dotnet build Quantira.sln` succeeded)
 
 ## Known Issues
 - Some docs in `docs/` reference old project name `PortfolioTracker`

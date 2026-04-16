@@ -11,6 +11,7 @@ using Quantira.Infrastructure.Assets.Providers;
 using Quantira.Infrastructure.Cache;
 using Quantira.Infrastructure.Chat;
 using Quantira.Infrastructure.Indicators;
+using Quantira.Infrastructure.Indicators.Implementations;
 using Quantira.Infrastructure.Jobs;
 using Quantira.Infrastructure.MarketData;
 using Quantira.Infrastructure.MarketData.Providers;
@@ -106,8 +107,16 @@ public static class DependencyInjection
         services.AddSingleton<MarketDataProviderFactory>();
         services.AddScoped<IMarketDataService, MarketDataService>();
 
-        // ── Indicator Engine (stub — replace when indicators are implemented) ─
-        services.AddScoped<IIndicatorEngine, StubIndicatorEngine>();
+        // ── Indicator Engine ─────────────────────────────────────────────────
+        // Auto-register all IIndicator implementations.
+        services.AddScoped<IIndicator, RsiIndicator>();
+        services.AddScoped<IIndicator, MacdIndicator>();
+        services.AddScoped<IIndicator, BollingerBandsIndicator>();
+        services.AddScoped<IIndicator, EmaIndicator>();
+        services.AddScoped<IIndicator, SmaIndicator>();
+        services.AddScoped<IIndicator, AtrIndicator>();
+
+        services.AddScoped<IIndicatorEngine, IndicatorEngine>();
 
         // ── Chat Session Service (stub — replace when MongoDB service is ready) ─
         services.AddScoped<IChatSessionService, StubChatSessionService>();
@@ -159,7 +168,7 @@ public static class DependencyInjection
         jobManager.AddOrUpdate<MarketDataRefreshJob>(
             recurringJobId: "market-data-refresh",
             methodCall: job => job.RefreshActivePricesAsync(),
-            cronExpression: "*/15 * * * * *",  // Every 15 seconds
+            cronExpression: "0 * * * * *",  // Every 1 minute
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc
@@ -186,7 +195,7 @@ public static class DependencyInjection
         jobManager.AddOrUpdate<AssetCatalogueUpdateJob>(
             recurringJobId: "asset-catalogue-update",
             methodCall: job => job.RunAllUpdatesAsync(CancellationToken.None),
-            cronExpression: "0 2 * * *",   // Her gün saat 02:00 UTC
+            cronExpression: "0 2 * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc
