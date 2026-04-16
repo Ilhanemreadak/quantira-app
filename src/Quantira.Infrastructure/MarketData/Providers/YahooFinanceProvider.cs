@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Quantira.Application.MarketData.DTOs;
@@ -71,6 +71,15 @@ public sealed class YahooFinanceProvider : IMarketDataProvider
                 .ToList()
                 .AsReadOnly()
                 ?? [];
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            _logger.LogWarning(
+                ex,
+                "[YahooFinance] Rate limit hit (429) for symbols: {Symbols}",
+                symbolList);
+
+            throw;
         }
         catch (Exception ex)
         {

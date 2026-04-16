@@ -168,7 +168,7 @@ public static class DependencyInjection
         jobManager.AddOrUpdate<MarketDataRefreshJob>(
             recurringJobId: "market-data-refresh",
             methodCall: job => job.RefreshActivePricesAsync(),
-            cronExpression: "*/15 * * * * *",  // Every 15 seconds
+            cronExpression: "0 * * * * *",  // Every 1 minute
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc
