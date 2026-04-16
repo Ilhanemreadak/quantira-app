@@ -25,6 +25,22 @@ public sealed class AssetRepository : IAssetRepository
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Asset>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idList = ids
+            .Distinct()
+            .ToList();
+
+        if (idList.Count == 0)
+            return [];
+
+        return await _context.Assets
+            .Where(a => a.IsActive && idList.Contains(a.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Asset?> GetBySymbolAsync(
         string symbol,
         CancellationToken cancellationToken = default)

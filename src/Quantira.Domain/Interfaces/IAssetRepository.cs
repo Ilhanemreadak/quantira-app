@@ -18,6 +18,14 @@ public interface IAssetRepository
     Task<Asset?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves active assets by their identifiers in a single database call.
+    /// Used by background jobs to avoid N+1 lookups.
+    /// </summary>
+    Task<IReadOnlyList<Asset>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves an asset by its ticker symbol (case-insensitive).
     /// Returns <c>null</c> if the symbol is not tracked in Quantira.
     /// Used during trade entry to resolve user-typed symbols to asset records.

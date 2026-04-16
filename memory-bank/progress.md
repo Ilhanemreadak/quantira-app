@@ -39,6 +39,9 @@
 - [x] `IAssetRepository.GetBySymbolsAsync(...)` added for single-query symbol batch reads
 - [x] `MarketDataService.GetBatchLatestAsync(...)` refactored to remove N+1 lookups and run provider calls in parallel safely
 - [x] Provider-level fault isolation added in market data batch flow (`try/catch` per provider group)
+- [x] `IAssetRepository.GetByIdsAsync(...)` added for batched asset-id lookups
+- [x] `AlertCheckJob` asset resolution refactored from per-id loop to single batched repository call
+- [x] `MarketDataRefreshJob` SignalR broadcasting refactored to parallel `Task.WhenAll` publish
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed

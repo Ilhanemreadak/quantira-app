@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Interfaces;
@@ -56,12 +56,13 @@ public sealed class MarketDataRefreshJob
         {
             var prices = await _marketDataService.GetBatchLatestAsync(symbols);
 
-            foreach (var price in prices)
-            {
-                await _hubContext.Clients
+            var publishTasks = prices
+                .Select(price => _hubContext.Clients
                     .Group(price.Symbol)
-                    .SendAsync("PriceUpdated", price);
-            }
+                    .SendAsync("PriceUpdated", price))
+                .ToList();
+
+            await Task.WhenAll(publishTasks);
 
             _logger.LogDebug(
                 "[MarketDataRefreshJob] Refreshed {Count} prices.",

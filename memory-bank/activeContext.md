@@ -46,6 +46,11 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - Added provider-group `try/catch` isolation so one failed provider does not fail the entire batch
   - Cache writes for batch results are normalized (`price:{SYMBOL}`) and awaited in parallel
 - Full solution build completed successfully after refactor (`dotnet build Quantira.sln`).
+- Additional job-level performance hardening was applied after cross-checking similar patterns:
+  - Added `IAssetRepository.GetByIdsAsync(...)` for batch lookup by asset id
+  - Refactored `AlertCheckJob` to replace per-id asset fetch loop with single batched DB call
+  - Refactored `MarketDataRefreshJob` SignalR publish loop to parallel `Task.WhenAll` broadcasting
+  - Verified solution builds successfully after these refactors (`dotnet build Quantira.sln`)
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer
@@ -58,3 +63,4 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
 - Confirm frontend `client/` API base URL is aligned with WebAPI launch settings
 - Implement real BIST source adapter (MKK/KAP CSV or licensed feed) behind `BistAssetProvider`
 - Add provider integration tests for `AssetCatalogueUpdateJob` diff/transaction behavior and provider-failure isolation
+- Add load/perf tests for Hangfire cycles (`MarketDataRefreshJob`, `AlertCheckJob`) under higher symbol/alert counts

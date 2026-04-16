@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Application.MarketData.DTOs;
 using Quantira.Domain.Interfaces;
@@ -55,14 +55,10 @@ public sealed class AlertCheckJob
             .Distinct()
             .ToList();
 
-        var symbolMap = new Dictionary<Guid, string>();
+        var assets = await _assetRepository.GetByIdsAsync(assetIds);
 
-        foreach (var assetId in assetIds)
-        {
-            var asset = await _assetRepository.GetByIdAsync(assetId);
-            if (asset is not null)
-                symbolMap[assetId] = asset.Symbol;
-        }
+        var symbolMap = assets
+            .ToDictionary(asset => asset.Id, asset => asset.Symbol);
 
         var triggeredCount = 0;
         var expiredCount = 0;
