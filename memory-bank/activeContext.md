@@ -57,6 +57,14 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - `NewsIngestionJob` now uses bounded concurrency (`SemaphoreSlim`, `MaxParallelism`) with per-symbol fault isolation and cycle-level success/failure metrics
   - `NewsIngestionJob` signature now propagates `CancellationToken` through repository/cache operations
   - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
+- Market data resilience hardening was added for provider throttling/auth issues:
+  - `MarketDataService.GetBatchLatestAsync(...)` now applies provider-scoped in-memory 429 circuit breaker logic
+  - Threshold: 3 consecutive `429 TooManyRequests`; cooldown: 5 minutes per provider
+  - During cooldown, provider calls are skipped with warning logs to avoid unnecessary external pressure
+  - `YahooFinanceProvider` now rethrows `HttpRequestException` on 429 so circuit breaker can observe failures
+  - `GoldApiProvider` now logs explicit diagnostics for `403 Forbidden` (key/quota/entitlement hints)
+  - Hangfire `market-data-refresh` cron interval was relaxed from every 15 seconds to every 1 minute
+  - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer

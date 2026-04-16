@@ -45,6 +45,10 @@
 - [x] `AssetCatalogueUpdateJob` upgraded with symbol normalization + chunked existing-symbol lookup strategy
 - [x] `AssetCatalogueUpdateJob` insert pipeline chunked with `ChangeTracker.Clear()` between batches for lower memory pressure
 - [x] `NewsIngestionJob` upgraded with bounded concurrency (`SemaphoreSlim`) + per-symbol fault isolation + cancellation propagation
+- [x] `MarketDataService` batch flow upgraded with provider-scoped 429 circuit breaker (3 consecutive 429 -> 5 min cooldown)
+- [x] `YahooFinanceProvider` updated to surface 429 as `HttpRequestException` for circuit-breaker handling
+- [x] `GoldApiProvider` enriched with explicit 403 diagnostics (key/quota/entitlement guidance)
+- [x] `market-data-refresh` recurring job interval relaxed from 15s to 60s
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed

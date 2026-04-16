@@ -37,6 +37,10 @@ HTTP Request
 - `IMarketDataProvider` interface + `MarketDataProviderFactory` picks by asset type
 - Priority: Binance → YahooFinance → GoldApi
 - Each provider is a typed `HttpClient` with `AddStandardResilienceHandler()`
+- Runtime guardrail: `MarketDataService` applies provider-scoped 429 circuit breaker for batch latest calls
+  - Opens after 3 consecutive `429` responses from the same provider
+  - Cooldown window: 5 minutes (provider skipped during cooldown)
+  - Circuit state is tracked in-memory per application instance
 
 ### Asset Catalogue Providers
 - Asset catalogue refresh now follows provider pattern via `IAssetProvider`
