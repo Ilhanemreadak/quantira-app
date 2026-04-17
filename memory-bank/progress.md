@@ -52,6 +52,7 @@
 - [x] `GoldApiProvider` enriched with explicit 403 diagnostics (key/quota/entitlement guidance)
 - [x] `market-data-refresh` recurring job interval relaxed from 15s to 60s
 - [x] Generic graph-wide `Update(...)` methods removed from Portfolio/Alert/Asset repositories to prevent EF state misclassification in tracked aggregate flows
+- [x] Hangfire dashboard upgraded to config-driven Basic Auth security with HTTPS enforcement, optional IP allowlist, read-only mode, and config-driven worker count
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed

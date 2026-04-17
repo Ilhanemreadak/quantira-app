@@ -1,17 +1,18 @@
 using Hangfire;
 using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Quantira.Application;
 using Quantira.Infrastructure;
 using Quantira.Infrastructure.AI;
 using Quantira.Infrastructure.Persistence;
+using Quantira.WebAPI.Configuration;
 using Quantira.WebAPI.Controllers;
+using Quantira.WebAPI.Hangfire;
 using Quantira.WebAPI.Hubs;
 using Quantira.WebAPI.Middleware;
 using Scalar.AspNetCore;
@@ -37,6 +38,23 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddInfrastructureAI(builder.Configuration);
+
+    builder.Services
+        .AddOptions<HangfireSettings>()
+        .Bind(builder.Configuration.GetSection(HangfireSettings.SectionName))
+        .Validate(settings => settings.WorkerCount > 0,
+            "Hangfire worker count must be greater than zero.")
+        .Validate(settings =>
+                !settings.Dashboard.Enabled
+                || !string.IsNullOrWhiteSpace(settings.Dashboard.Path),
+            "Hangfire dashboard path is required when the dashboard is enabled.")
+        .Validate(settings =>
+                !settings.Dashboard.Enabled
+                || settings.Dashboard.Path.StartsWith('/'),
+            "Hangfire dashboard path must start with '/'.")
+        .ValidateOnStart();
+
+    builder.Services.AddSingleton<HangfireDashboardBasicAuthFilter>();
 
     // ── ASP.NET Core Identity ────────────────────────────────────────
     builder.Services
@@ -178,10 +196,32 @@ try
     app.UseAuthorization();
 
     // ── Hangfire Dashboard ───────────────────────────────────────────
-    app.UseHangfireDashboard("/jobs", new DashboardOptions
+    var hangfireSettings = app.Services
+        .GetRequiredService<IOptions<HangfireSettings>>()
+        .Value;
+
+    if (hangfireSettings.Dashboard.Enabled)
     {
-        Authorization = [new HangfireAuthFilter()]
-    });
+        if (!hangfireSettings.Dashboard.HasCredentialsConfigured())
+        {
+            app.Logger.LogWarning(
+                "Hangfire dashboard is enabled but credentials are missing. Configure Hangfire:Dashboard:Username and Hangfire:Dashboard:Password to enable it.");
+        }
+        else
+        {
+            app.UseHangfireDashboard(hangfireSettings.Dashboard.Path, new DashboardOptions
+            {
+                Authorization = [app.Services.GetRequiredService<HangfireDashboardBasicAuthFilter>()],
+                IsReadOnlyFunc = _ => hangfireSettings.Dashboard.IsReadOnly,
+                DashboardTitle = "Quantira Hangfire"
+            });
+
+            app.Logger.LogInformation(
+                "Hangfire dashboard mapped at {Path}. ReadOnly: {ReadOnly}.",
+                hangfireSettings.Dashboard.Path,
+                hangfireSettings.Dashboard.IsReadOnly);
+        }
+    }
 
     app.MapControllers();
     app.MapHub<PriceHub>("/hubs/price");
@@ -213,16 +253,4 @@ catch (Exception ex)
 finally
 {
     await Log.CloseAndFlushAsync();
-}
-
-/// <summary>
-/// Restricts Hangfire dashboard access to authenticated users.
-/// </summary>
-public sealed class HangfireAuthFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
-{
-    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
-    {
-        var http = context.GetHttpContext();
-        return http.User.Identity?.IsAuthenticated == true;
-    }
 }

@@ -1,4 +1,7 @@
-﻿namespace Quantira.WebAPI.Middleware;
+using Microsoft.Extensions.Options;
+using Quantira.WebAPI.Configuration;
+
+namespace Quantira.WebAPI.Middleware;
 
 /// <summary>
 /// Lightweight middleware that logs every HTTP request with its method,
@@ -10,30 +13,32 @@
 /// </summary>
 public sealed class RequestLoggingMiddleware
 {
-    private static readonly HashSet<string> SkippedPaths =
+    private static readonly HashSet<string> DefaultSkippedPaths =
     [
         "/health",
         "/health/live",
-        "/health/ready",
-        "/jobs"
+        "/health/ready"
     ];
 
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
+    private readonly string _dashboardPath;
 
     public RequestLoggingMiddleware(
         RequestDelegate next,
-        ILogger<RequestLoggingMiddleware> logger)
+        ILogger<RequestLoggingMiddleware> logger,
+        IOptions<HangfireSettings> hangfireSettings)
     {
         _next = next;
         _logger = logger;
+        _dashboardPath = NormalizePath(hangfireSettings.Value.Dashboard.Path);
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        if (SkippedPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        if (ShouldSkip(path))
         {
             await _next(context);
             return;
@@ -57,5 +62,22 @@ public sealed class RequestLoggingMiddleware
             path,
             context.Response.StatusCode,
             elapsed.TotalMilliseconds.ToString("F1"));
+    }
+
+    private bool ShouldSkip(string path)
+    {
+        if (DefaultSkippedPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        return !string.IsNullOrWhiteSpace(_dashboardPath)
+            && path.StartsWith(_dashboardPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return string.Empty;
+
+        return path.StartsWith('/') ? path : $"/{path}";
     }
 }

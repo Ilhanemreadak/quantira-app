@@ -71,6 +71,13 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
   - `GoldApiProvider` now logs explicit diagnostics for `403 Forbidden` (key/quota/entitlement hints)
   - Hangfire `market-data-refresh` cron interval was relaxed from every 15 seconds to every 1 minute
   - Full solution build re-verified after these updates (`dotnet build Quantira.sln`)
+- Hangfire dashboard security was upgraded for production-style access:
+  - Added config-bound `HangfireSettings` / `Hangfire:Dashboard` model in WebAPI
+  - Replaced unusable JWT-only dashboard gate with dedicated HTTP Basic Auth filter for browser compatibility
+  - Added HTTPS enforcement, optional CIDR allowlist, and config-driven read-only mode
+  - Dashboard is now mapped only when credentials are configured; otherwise startup logs a warning and skips endpoint exposure
+  - Hangfire server worker count now reads from `Hangfire:WorkerCount`
+  - Request logging middleware now skips the configured dashboard path instead of hardcoded `/jobs`
 
 ## Active Decisions
 - `ICacheService` is the only Redis abstraction visible to Application layer
@@ -85,3 +92,4 @@ WebAPI startup configuration is aligned with .NET 10 and currently builds clean 
 - Add provider integration tests for `AssetCatalogueUpdateJob` diff/transaction behavior and provider-failure isolation
 - Add load/perf tests for Hangfire cycles (`MarketDataRefreshJob`, `AlertCheckJob`) under higher symbol/alert counts
 - Add load/perf tests for `AssetCatalogueUpdateJob` chunk thresholds and tune `SymbolLookupChunkSize`/`InsertChunkSize` with production-like data
+- Consider moving Hangfire dashboard credentials entirely to environment variables / user secrets in deployed environments and document reverse-proxy forwarding requirements when SSL termination happens upstream

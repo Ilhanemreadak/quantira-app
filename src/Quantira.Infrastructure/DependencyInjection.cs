@@ -153,8 +153,10 @@ public static class DependencyInjection
                     DisableGlobalLocks = true
                 }));
 
+        var workerCount = configuration.GetValue<int?>("Hangfire:WorkerCount") ?? 5;
+
         services.AddHangfireServer(options =>
-            options.WorkerCount = 5);
+            options.WorkerCount = workerCount > 0 ? workerCount : 5);
 
         services.AddScoped<MarketDataRefreshJob>();
         services.AddScoped<AlertCheckJob>();

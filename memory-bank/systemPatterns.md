@@ -64,6 +64,16 @@ HTTP Request
   - Config section: `AssetProviders:GlobalStocks`
   - Supports multi-exchange pulls via configurable `Exchanges`
 
+### Hangfire Dashboard Security
+- Hangfire processing uses SQL Server storage and config-driven worker count (`Hangfire:WorkerCount`)
+- Dashboard mapping is controlled by `Hangfire:Dashboard`
+- Dashboard auth uses HTTP Basic Auth instead of the API JWT flow because browser dashboard navigation cannot reliably attach bearer tokens
+- Security controls are config-driven:
+  - `RequireSsl` to block non-HTTPS access
+  - `AllowedIpNetworks` for CIDR-based IP allowlisting
+  - `IsReadOnly` for operations-safe support access
+- If dashboard credentials are missing, the dashboard endpoint is not mapped and startup logs a warning instead of exposing an insecure endpoint
+
 ### AI Integration
 - `IAIService` defined in Application, implemented by `ClaudeAIService` in Infrastructure.AI
 - `IPortfolioContextBuilder` assembles portfolio snapshot → injected into Claude prompt

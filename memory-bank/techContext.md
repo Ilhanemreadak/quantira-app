@@ -44,6 +44,7 @@ TanStack Query/Router/Table, Zustand, React Hook Form + Zod, Recharts, lightweig
 - `ConnectionStrings:SqlServer` — EF Core + Hangfire
 - `ConnectionStrings:Redis` — StackExchange.Redis multiplexer
 - `Redis` — bound to `RedisCacheOptions` (`KeyPrefix`, `DefaultExpiry`)
+- `Hangfire` — bound to `HangfireSettings` (`WorkerCount`, `Dashboard:Enabled|Path|RequireSsl|IsReadOnly|Username|Password|AllowedIpNetworks`)
 - `Claude` — bound to `ClaudeOptions` (API key, model, endpoint)
 - `Email` — bound to `EmailOptions`
 - `MarketData:GoldApiKey` — GoldApi provider header
