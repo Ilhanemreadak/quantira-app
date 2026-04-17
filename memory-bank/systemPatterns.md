@@ -32,6 +32,11 @@ HTTP Request
 - Implementations in **Infrastructure/Persistence/Repositories/**
 - EF Core for writes; Dapper for complex read queries
 - Unit of Work (`IUnitOfWork`) wraps `SaveChangesAsync`
+- Tracked aggregate/entity mutation flows must **not** call repository `Update(...)`.
+  - Load tracked entity in write flow
+  - Mutate via domain methods
+  - Let EF change tracker persist on `SaveChangesAsync`
+  - Never use graph-wide `_context.Update(...)` for tracked aggregates with child collections
 
 ### Market Data Providers
 - `IMarketDataProvider` interface + `MarketDataProviderFactory` picks by asset type

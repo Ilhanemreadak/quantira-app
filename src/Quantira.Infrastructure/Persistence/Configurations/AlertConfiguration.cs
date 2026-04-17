@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Quantira.Domain.Entities;
 
@@ -19,8 +19,7 @@ public sealed class AlertConfiguration : IEntityTypeConfiguration<Alert>
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Id)
-            .HasDefaultValueSql("NEWSEQUENTIALID()")
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(a => a.UserId)
             .IsRequired();

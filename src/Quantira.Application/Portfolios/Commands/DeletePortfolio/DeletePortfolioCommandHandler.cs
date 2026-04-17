@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Domain.Exceptions;
 using Quantira.Domain.Interfaces;
 
@@ -12,14 +12,11 @@ namespace Quantira.Application.Portfolios.Commands.DeletePortfolio;
 public sealed class DeletePortfolioCommandHandler : IRequestHandler<DeletePortfolioCommand>
 {
     private readonly IPortfolioRepository _portfolioRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public DeletePortfolioCommandHandler(
-        IPortfolioRepository portfolioRepository,
-        IUnitOfWork unitOfWork)
+        IPortfolioRepository portfolioRepository)
     {
         _portfolioRepository = portfolioRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(
@@ -43,6 +40,5 @@ public sealed class DeletePortfolioCommandHandler : IRequestHandler<DeletePortfo
                 "Cannot delete your only remaining portfolio.");
 
         portfolio.Delete();
-        _portfolioRepository.Update(portfolio);
     }
 }

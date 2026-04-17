@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Exceptions;
 using Quantira.Domain.Interfaces;
@@ -18,14 +18,11 @@ public sealed class CreatePortfolioCommandHandler
     : IRequestHandler<CreatePortfolioCommand, Guid>
 {
     private readonly IPortfolioRepository _portfolioRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CreatePortfolioCommandHandler(
-        IPortfolioRepository portfolioRepository,
-        IUnitOfWork unitOfWork)
+        IPortfolioRepository portfolioRepository)
     {
         _portfolioRepository = portfolioRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(
@@ -61,6 +58,5 @@ public sealed class CreatePortfolioCommandHandler
         if (currentDefault is null) return;
 
         currentDefault.UnsetDefault();
-        _portfolioRepository.Update(currentDefault);
     }
 }

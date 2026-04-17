@@ -1,4 +1,4 @@
-﻿using Quantira.Domain.Entities;
+using Quantira.Domain.Entities;
 using Quantira.Domain.Enums;
 
 namespace Quantira.Domain.Interfaces;
@@ -39,12 +39,4 @@ public interface IAlertRepository
     /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
     /// </summary>
     Task AddAsync(Alert alert, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Marks the given alert as modified in the change tracker.
-    /// Used when updating alert status (e.g. Active → Triggered)
-    /// or modifying the condition threshold.
-    /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
-    /// </summary>
-    void Update(Alert alert);
 }

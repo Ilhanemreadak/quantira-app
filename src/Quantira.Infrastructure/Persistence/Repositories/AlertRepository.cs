@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Enums;
 using Quantira.Domain.Interfaces;
@@ -56,10 +56,5 @@ public sealed class AlertRepository : IAlertRepository
         CancellationToken cancellationToken = default)
     {
         await _context.Alerts.AddAsync(alert, cancellationToken);
-    }
-
-    public void Update(Alert alert)
-    {
-        _context.Alerts.Update(alert);
     }
 }

@@ -21,6 +21,8 @@
 - [x] Commands + handlers: CreatePortfolio, AddTrade, DeletePortfolio, CreateAsset, CreateAlert, DeleteAlert, SendMessage
 - [x] Queries + handlers: GetPortfolioList, GetPortfolioSummary, GetTradeHistory, GetAssetBySymbol, GetUserAlerts, GetPriceHistory, CalculateIndicator, GetChatHistory
 - [x] DTOs for all features
+- [x] Write handlers cleaned from tracked-load → mutate → repository `Update(...)` anti-pattern
+- [x] Unused `IUnitOfWork` injections removed from handlers where transaction commit is already centralized in `TransactionBehavior`
 
 ### Infrastructure
 - [x] `QuantiraDbContext` + EF Fluent configs for all entities
@@ -49,6 +51,7 @@
 - [x] `YahooFinanceProvider` updated to surface 429 as `HttpRequestException` for circuit-breaker handling
 - [x] `GoldApiProvider` enriched with explicit 403 diagnostics (key/quota/entitlement guidance)
 - [x] `market-data-refresh` recurring job interval relaxed from 15s to 60s
+- [x] Generic graph-wide `Update(...)` methods removed from Portfolio/Alert/Asset repositories to prevent EF state misclassification in tracked aggregate flows
 
 ### Infrastructure.AI
 - [x] `ClaudeAIService` — streaming + non-streaming, CA2024 fixed

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Exceptions;
 using Quantira.Domain.Interfaces;
@@ -16,16 +16,13 @@ public sealed class CreateAlertCommandHandler
 {
     private readonly IAlertRepository _alertRepository;
     private readonly IAssetRepository _assetRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CreateAlertCommandHandler(
         IAlertRepository alertRepository,
-        IAssetRepository assetRepository,
-        IUnitOfWork unitOfWork)
+        IAssetRepository assetRepository)
     {
         _alertRepository = alertRepository;
         _assetRepository = assetRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(

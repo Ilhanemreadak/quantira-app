@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Interfaces;
 
@@ -65,10 +65,5 @@ public sealed class PortfolioRepository : IPortfolioRepository
         CancellationToken cancellationToken = default)
     {
         await _context.Portfolios.AddAsync(portfolio, cancellationToken);
-    }
-
-    public void Update(Portfolio portfolio)
-    {
-        _context.Portfolios.Update(portfolio);
     }
 }

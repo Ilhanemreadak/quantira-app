@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Domain.Exceptions;
 using Quantira.Domain.Interfaces;
 
@@ -11,14 +11,11 @@ namespace Quantira.Application.Alerts.Commands.DeleteAlert;
 public sealed class DeleteAlertCommandHandler : IRequestHandler<DeleteAlertCommand>
 {
     private readonly IAlertRepository _alertRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public DeleteAlertCommandHandler(
-        IAlertRepository alertRepository,
-        IUnitOfWork unitOfWork)
+        IAlertRepository alertRepository)
     {
         _alertRepository = alertRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(
@@ -35,6 +32,5 @@ public sealed class DeleteAlertCommandHandler : IRequestHandler<DeleteAlertComma
                 "You do not have permission to delete this alert.");
 
         alert.Expire();
-        _alertRepository.Update(alert);
     }
 }

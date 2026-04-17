@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Domain.Entities;
 using Quantira.Domain.Interfaces;
 
@@ -13,14 +13,11 @@ public sealed class CreateAssetCommandHandler
     : IRequestHandler<CreateAssetCommand, Guid>
 {
     private readonly IAssetRepository _assetRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CreateAssetCommandHandler(
-        IAssetRepository assetRepository,
-        IUnitOfWork unitOfWork)
+        IAssetRepository assetRepository)
     {
         _assetRepository = assetRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(

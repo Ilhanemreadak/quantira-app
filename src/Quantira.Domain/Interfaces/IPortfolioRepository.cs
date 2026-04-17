@@ -1,4 +1,4 @@
-﻿using Quantira.Domain.Entities;
+using Quantira.Domain.Entities;
 
 namespace Quantira.Domain.Interfaces;
 
@@ -44,10 +44,4 @@ public interface IPortfolioRepository
     /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
     /// </summary>
     Task AddAsync(Portfolio portfolio, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Marks the given portfolio as modified in the change tracker.
-    /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
-    /// </summary>
-    void Update(Portfolio portfolio);
 }

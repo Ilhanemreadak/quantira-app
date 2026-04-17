@@ -4,6 +4,12 @@
 WebAPI startup configuration is aligned with .NET 10 and currently builds clean with the rest of the solution.
 
 ## Recent Changes (this session)
+- EF Core tracking/state safety refactor was applied for write flows:
+  - Removed generic repository `Update(...)` methods from portfolio/alert/asset repository contracts and EF implementations.
+  - Removed tracked-load → mutate → `Update(...)` anti-pattern from command handlers (`AddTrade`, `CreatePortfolio`, `DeletePortfolio`, `DeleteAlert`).
+  - Removed redundant `_alertRepository.Update(...)` calls from `AlertCheckJob`; tracked alert mutations now persist via `IUnitOfWork.SaveChangesAsync()` at the end of the cycle.
+  - Removed unused `IUnitOfWork` constructor dependencies from handlers that never called it.
+  - Verified there are no remaining `_portfolioRepository.Update(...)`, `_alertRepository.Update(...)`, `_assetRepository.Update(...)` usages and solution builds successfully.
 - WebAPI `Program.cs` was standardized to .NET 10 native OpenAPI + Scalar (`AddOpenApi`, `MapOpenApi`, `MapScalarApiReference`), without Swashbuckle calls.
 - `Quantira.WebAPI.csproj` now includes explicit API surface dependencies used in startup:
   - `Microsoft.AspNetCore.Authentication.JwtBearer`

@@ -107,9 +107,4 @@ public sealed class AssetRepository : IAssetRepository
     {
         await _context.Assets.AddAsync(asset, cancellationToken);
     }
-
-    public void Update(Asset asset)
-    {
-        _context.Assets.Update(asset);
-    }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Quantira.Domain.Entities;
 using Quantira.Domain.ValueObjects;
@@ -21,8 +21,7 @@ public sealed class PortfolioConfiguration : IEntityTypeConfiguration<Portfolio>
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.Id)
-            .HasDefaultValueSql("NEWSEQUENTIALID()")
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(p => p.UserId)
             .IsRequired();

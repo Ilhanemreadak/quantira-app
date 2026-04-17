@@ -3,6 +3,7 @@ using Hangfire.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using Quantira.Application.Chat.Services;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Interfaces;
@@ -118,8 +119,18 @@ public static class DependencyInjection
 
         services.AddScoped<IIndicatorEngine, IndicatorEngine>();
 
-        // ── Chat Session Service (stub — replace when MongoDB service is ready) ─
-        services.AddScoped<IChatSessionService, StubChatSessionService>();
+        // ──Chat - MongoDB ──────────────────────────────────────────────────────────
+        var mongoConnectionString = configuration.GetConnectionString("MongoDB")
+            ?? throw new InvalidOperationException(
+                "MongoDB connection string is missing. Add it via User Secrets.");
+
+        services.AddSingleton<IMongoClient>(
+            new MongoClient(mongoConnectionString));
+
+        services.Configure<MongoDbOptions>(
+            configuration.GetSection("MongoDB"));
+
+        services.AddScoped<IChatSessionService, MongoChatSessionService>();
 
         services.AddScoped<IAssetProvider, BinanceAssetProvider>();
         services.AddScoped<IAssetProvider, BistAssetProvider>();
@@ -150,10 +161,13 @@ public static class DependencyInjection
         services.AddScoped<NewsIngestionJob>();
 
         // ── Notifications ────────────────────────────────────────────
-        services.Configure<EmailOptions>(
-            configuration.GetSection("Email"));
+        services.Configure<ResendOptions>(
+        configuration.GetSection("Resend"));
 
-        services.AddScoped<INotificationService, EmailNotificationService>();
+        services.AddHttpClient<ResendEmailService>()
+            .AddStandardResilienceHandler();
+
+        services.AddScoped<INotificationService, ResendEmailService>();
 
         return services;
     }

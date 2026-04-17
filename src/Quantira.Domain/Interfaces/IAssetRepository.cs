@@ -64,10 +64,4 @@ public interface IAssetRepository
     /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
     /// </summary>
     Task AddAsync(Asset asset, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Marks the given asset as modified in the change tracker.
-    /// Changes are not persisted until <see cref="IUnitOfWork.SaveChangesAsync"/> is called.
-    /// </summary>
-    void Update(Asset asset);
 }

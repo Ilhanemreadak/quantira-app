@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Domain.Exceptions;
 using Quantira.Domain.Interfaces;
@@ -19,18 +19,15 @@ public sealed class AddTradeCommandHandler : IRequestHandler<AddTradeCommand, Gu
     private readonly IPortfolioRepository _portfolioRepository;
     private readonly IAssetRepository _assetRepository;
     private readonly ICacheService _cache;
-    private readonly IUnitOfWork _unitOfWork;
 
     public AddTradeCommandHandler(
         IPortfolioRepository portfolioRepository,
         IAssetRepository assetRepository,
-        ICacheService cache,
-        IUnitOfWork unitOfWork)
+        ICacheService cache)
     {
         _portfolioRepository = portfolioRepository;
         _assetRepository = assetRepository;
         _cache = cache;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(
@@ -55,8 +52,6 @@ public sealed class AddTradeCommandHandler : IRequestHandler<AddTradeCommand, Gu
             taxAmount: command.TaxAmount,
             tradedAt: command.TradedAt,
             notes: command.Notes);
-
-        _portfolioRepository.Update(portfolio);
 
         await _cache.RemoveByPrefixAsync(
             $"quantira:portfolio:{command.PortfolioId}",

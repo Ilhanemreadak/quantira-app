@@ -1,9 +1,12 @@
-using System.Text;
 using Hangfire;
 using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
 using Quantira.Application;
 using Quantira.Infrastructure;
 using Quantira.Infrastructure.AI;
@@ -13,6 +16,7 @@ using Quantira.WebAPI.Hubs;
 using Quantira.WebAPI.Middleware;
 using Scalar.AspNetCore;
 using Serilog;
+using System.Text;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -98,7 +102,27 @@ try
     builder.Services.AddControllers();
 
     // ── OpenAPI (Scalar — .NET 10 native, instead of Swashbuckle) ────
-    builder.Services.AddOpenApi();
+    builder.Services.AddOpenApi(options =>
+    {
+        options.AddDocumentTransformer((document, context, cancellationToken) =>
+        {
+            document.Components ??= new OpenApiComponents();
+
+            document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
+            {
+                ["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Name = "Authorization"
+                }
+            };
+
+            return Task.CompletedTask;
+        });
+    });
 
     // ── SignalR ──────────────────────────────────────────────────────
     builder.Services.AddSignalR(options =>
@@ -180,7 +204,7 @@ try
             .SeedAsync(context, logger);
     }
 
-    app.Run();
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
@@ -188,7 +212,7 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
 
 /// <summary>

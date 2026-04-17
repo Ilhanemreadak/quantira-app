@@ -72,7 +72,6 @@ public sealed class AlertCheckJob
                     && alert.ExpiresAt.Value <= DateTime.UtcNow)
                 {
                     alert.Expire();
-                    _alertRepository.Update(alert);
                     expiredCount++;
                     continue;
                 }
@@ -90,7 +89,6 @@ public sealed class AlertCheckJob
                 if (ShouldTrigger(alert, priceLatest.Price))
                 {
                     alert.Trigger(priceLatest.Price);
-                    _alertRepository.Update(alert);
                     triggeredCount++;
                 }
             }

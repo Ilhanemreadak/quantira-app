@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Quantira.Domain.Entities;
 
@@ -20,8 +20,7 @@ public sealed class TradeConfiguration : IEntityTypeConfiguration<Trade>
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.Id)
-            .HasDefaultValueSql("NEWSEQUENTIALID()")
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(t => t.PortfolioId)
             .IsRequired();
