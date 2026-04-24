@@ -29,9 +29,16 @@ public static class DependencyInjection
         services.AddHttpClient<ClaudeAIService>()
             .AddStandardResilienceHandler();
 
+        // ── DeepSeek (NVIDIA) HTTP client ────────────────────────────
+        services.AddHttpClient<DeepSeekAIService>()
+            .AddStandardResilienceHandler();
+
         // ── Options ──────────────────────────────────────────────────
         services.Configure<ClaudeOptions>(
             configuration.GetSection("Claude"));
+
+        services.Configure<DeepSeekOptions>(
+            configuration.GetSection("DeepSeek"));
 
         // ── Service registrations ────────────────────────────────────
         services.AddScoped<IAIService, ClaudeAIService>();
