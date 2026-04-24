@@ -106,6 +106,7 @@ public static class DependencyInjection
         services.AddSingleton<IMarketDataProvider, GoldApiProvider>();
 
         services.AddSingleton<MarketDataProviderFactory>();
+        services.AddSingleton<ProviderCircuitBreaker>();
         services.AddScoped<IMarketDataService, MarketDataService>();
 
         // ── Indicator Engine ─────────────────────────────────────────────────
