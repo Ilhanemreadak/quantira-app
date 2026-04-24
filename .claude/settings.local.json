@@ -16,7 +16,8 @@
       "Bash(uvx --with igraph code-review-graph postprocess)",
       "mcp__code-review-graph__semantic_search_nodes_tool",
       "mcp__code-review-graph__build_or_update_graph_tool",
-      "mcp__plugin_context-mode_context-mode__ctx_batch_execute"
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search"
     ]
   },
   "enableAllProjectMcpServers": true,
