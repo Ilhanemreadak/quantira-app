@@ -16,6 +16,7 @@ using Quantira.Infrastructure.Indicators.Implementations;
 using Quantira.Infrastructure.Jobs;
 using Quantira.Infrastructure.MarketData;
 using Quantira.Infrastructure.MarketData.Providers;
+using FinnhubOptions = Quantira.Infrastructure.MarketData.Providers.FinnhubOptions;
 using Quantira.Infrastructure.Notifications;
 using Quantira.Infrastructure.Persistence;
 using Quantira.Infrastructure.Persistence.Repositories;
@@ -71,6 +72,12 @@ public static class DependencyInjection
         services.AddHttpClient<BinanceProvider>()
             .AddStandardResilienceHandler();
 
+        services.AddHttpClient<IsYatirimMarketDataProvider>()
+            .AddStandardResilienceHandler();
+
+        services.AddHttpClient<FinnhubMarketDataProvider>()
+            .AddStandardResilienceHandler();
+
         services.AddHttpClient<YahooFinanceProvider>()
             .AddStandardResilienceHandler();
 
@@ -101,7 +108,12 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(baseUrl);
         }).AddStandardResilienceHandler();
 
+        services.Configure<FinnhubOptions>(
+            configuration.GetSection(FinnhubOptions.SectionName));
+
         services.AddSingleton<IMarketDataProvider, BinanceProvider>();
+        services.AddSingleton<IMarketDataProvider, IsYatirimMarketDataProvider>();
+        services.AddSingleton<IMarketDataProvider, FinnhubMarketDataProvider>();
         services.AddSingleton<IMarketDataProvider, YahooFinanceProvider>();
         services.AddSingleton<IMarketDataProvider, GoldApiProvider>();
 
