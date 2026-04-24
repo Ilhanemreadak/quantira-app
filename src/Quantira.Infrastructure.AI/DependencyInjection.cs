@@ -1,47 +1,43 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quantira.Application.Chat.Services;
 using Quantira.Application.Common.Interfaces;
 using Quantira.Infrastructure.AI.Prompts;
 using Quantira.Infrastructure.AI.Services;
 
-
 namespace Quantira.Infrastructure.AI;
 
-/// <summary>
-/// Extension method that registers all <c>Quantira.Infrastructure.AI</c>
-/// dependencies into the ASP.NET Core DI container.
-/// Kept in a separate project from <c>Quantira.Infrastructure</c> so the
-/// AI provider can be swapped or disabled independently without touching
-/// the core infrastructure layer.
-/// Called from <c>Program.cs</c> after <c>AddInfrastructure()</c>.
-/// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureAI(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ── Claude API HTTP client ───────────────────────────────────
-        // Standard resilience handler adds retry (3 attempts, exponential
-        // backoff) and circuit breaker automatically via .NET 10
-        // Microsoft.Extensions.Http.Resilience.
-        services.AddHttpClient<ClaudeAIService>()
-            .AddStandardResilienceHandler();
-
-        // ── DeepSeek (NVIDIA) HTTP client ────────────────────────────
-        services.AddHttpClient<DeepSeekAIService>()
-            .AddStandardResilienceHandler();
+        // ── HTTP clients (all registered; only the active provider is resolved) ──
+        services.AddHttpClient<ClaudeAIService>().AddStandardResilienceHandler();
+        services.AddHttpClient<OpenAIService>().AddStandardResilienceHandler();
+        services.AddHttpClient<GeminiAIService>().AddStandardResilienceHandler();
+        services.AddHttpClient<OllamaAIService>().AddStandardResilienceHandler();
+        services.AddHttpClient<DeepSeekAIService>().AddStandardResilienceHandler();
 
         // ── Options ──────────────────────────────────────────────────
-        services.Configure<ClaudeOptions>(
-            configuration.GetSection("Claude"));
+        services.Configure<ClaudeOptions>(configuration.GetSection("Claude"));
+        services.Configure<OpenAIOptions>(configuration.GetSection("OpenAI"));
+        services.Configure<GeminiOptions>(configuration.GetSection("Gemini"));
+        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
+        services.Configure<DeepSeekOptions>(configuration.GetSection("DeepSeek"));
 
-        services.Configure<DeepSeekOptions>(
-            configuration.GetSection("DeepSeek"));
+        // ── Active provider — driven by appsettings "AIProvider" key ─
+        var provider = configuration["AIProvider"] ?? "Claude";
 
-        // ── Service registrations ────────────────────────────────────
-        services.AddScoped<IAIService, ClaudeAIService>();
+        services.AddScoped<IAIService>(provider switch
+        {
+            "OpenAI"   => sp => sp.GetRequiredService<OpenAIService>(),
+            "Gemini"   => sp => sp.GetRequiredService<GeminiAIService>(),
+            "Ollama"   => sp => sp.GetRequiredService<OllamaAIService>(),
+            "DeepSeek" => sp => sp.GetRequiredService<DeepSeekAIService>(),
+            _          => sp => sp.GetRequiredService<ClaudeAIService>()
+        });
 
         services.AddScoped<IPortfolioContextBuilder, PortfolioContextBuilder>();
 
