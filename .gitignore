@@ -429,3 +429,5 @@ FodyWeavers.xsd
 
 # Docker local override
 docker-compose.override.yml
+# Added by code-review-graph
+.code-review-graph/

@@ -1,4 +1,5 @@
-﻿using MediatR;
+using System.Collections;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Quantira.Application.Common.Interfaces;
 
@@ -47,11 +48,22 @@ public sealed class CachingBehavior<TRequest, TResponse>
 
         if (cached is not null)
         {
-            _logger.LogDebug(
-                "[CACHE HIT] {RequestName} key={CacheKey}",
-                typeof(TRequest).Name, key);
+            if (!cacheableQuery.ShouldCacheEmptyResponse && IsEmptyResponse(cached))
+            {
+                _logger.LogDebug(
+                    "[CACHE IGNORE] {RequestName} key={CacheKey} cached empty response ignored",
+                    typeof(TRequest).Name,
+                    key);
+            }
+            else
+            {
+                _logger.LogDebug(
+                    "[CACHE HIT] {RequestName} key={CacheKey}",
+                    typeof(TRequest).Name,
+                    key);
 
-            return cached;
+                return cached;
+            }
         }
 
         _logger.LogDebug(
@@ -60,9 +72,30 @@ public sealed class CachingBehavior<TRequest, TResponse>
 
         var response = await next();
 
+        if (!cacheableQuery.ShouldCacheEmptyResponse && IsEmptyResponse(response))
+        {
+            _logger.LogDebug(
+                "[CACHE SKIP] {RequestName} key={CacheKey} empty response not cached",
+                typeof(TRequest).Name,
+                key);
+
+            return response;
+        }
+
         await _cache.SetAsync(key, response, cacheableQuery.CacheDuration, cancellationToken);
 
         return response;
+    }
+
+    private static bool IsEmptyResponse(TResponse response)
+    {
+        return response switch
+        {
+            string value => string.IsNullOrWhiteSpace(value),
+            Array array => array.Length == 0,
+            ICollection collection => collection.Count == 0,
+            _ => false
+        };
     }
 }
 
@@ -86,4 +119,11 @@ public interface ICacheableQuery
     /// <c>RedisCacheService</c> (currently 60 seconds).
     /// </summary>
     TimeSpan? CacheDuration { get; }
+
+    /// <summary>
+    /// Controls whether an empty response should be stored in cache.
+    /// Queries with provider-backed or transiently empty results can disable
+    /// this to avoid persisting temporary empty responses.
+    /// </summary>
+    bool ShouldCacheEmptyResponse => true;
 }

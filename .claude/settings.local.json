@@ -4,7 +4,23 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet list:*)",
       "Bash(npm run *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "mcp__code-review-graph__list_graph_stats_tool",
+      "mcp__code-review-graph__list_repos_tool",
+      "mcp__code-review-graph__get_architecture_overview_tool",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "mcp__code-review-graph__detect_changes_tool",
+      "mcp__code-review-graph__get_knowledge_gaps_tool",
+      "mcp__code-review-graph__get_hub_nodes_tool",
+      "Bash(uvx code-review-graph *)",
+      "Bash(uvx --with igraph code-review-graph postprocess)",
+      "mcp__code-review-graph__semantic_search_nodes_tool",
+      "mcp__code-review-graph__build_or_update_graph_tool",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "code-review-graph"
+  ]
 }

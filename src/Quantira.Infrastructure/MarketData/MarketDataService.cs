@@ -227,13 +227,36 @@ public sealed class MarketDataService : IMarketDataService
             .GetBySymbolAsync(symbol, cancellationToken);
 
         if (asset is null)
+        {
+            _logger.LogWarning(
+                "[MarketData] History asset not found for symbol {Symbol}",
+                symbol);
+
             return [];
+        }
 
         var provider = _factory.GetProvider(asset.AssetType, asset.Exchange);
         var providerKey = asset.DataProviderKey ?? symbol;
 
-        return await provider.GetHistoryAsync(
+        _logger.LogInformation(
+            "[MarketData] Fetching history symbol={Symbol} provider={ProviderName} providerKey={ProviderKey} interval={Interval} from={FromUtc:O} to={ToUtc:O}",
+            symbol,
+            provider.ProviderName,
+            providerKey,
+            interval,
+            from.ToUniversalTime(),
+            to.ToUniversalTime());
+
+        var history = await provider.GetHistoryAsync(
             providerKey, interval, from, to, cancellationToken);
+
+        _logger.LogInformation(
+            "[MarketData] History result symbol={Symbol} provider={ProviderName} count={Count}",
+            symbol,
+            provider.ProviderName,
+            history.Count);
+
+        return history;
     }
 
     /// <inheritdoc/>

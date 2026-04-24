@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Quantira.Application.Common.Behaviors;
 using Quantira.Application.MarketData.DTOs;
 
@@ -26,10 +26,12 @@ public sealed record GetPriceHistoryQuery(
     private static readonly HashSet<string> IntradayIntervals = ["1m", "5m", "15m", "1h"];
 
     public string CacheKey =>
-        $"quantira:pricehistory:{Symbol.ToUpperInvariant()}:{Interval}:{From:yyyyMMdd}:{To:yyyyMMdd}";
+        $"quantira:pricehistory:{Symbol.ToUpperInvariant()}:{Interval.ToLowerInvariant()}:{From.ToUniversalTime():yyyyMMddHHmmss}:{To.ToUniversalTime():yyyyMMddHHmmss}";
 
     public TimeSpan? CacheDuration =>
         IntradayIntervals.Contains(Interval)
             ? TimeSpan.FromMinutes(5)
             : TimeSpan.FromMinutes(60);
+
+    public bool ShouldCacheEmptyResponse => false;
 }
