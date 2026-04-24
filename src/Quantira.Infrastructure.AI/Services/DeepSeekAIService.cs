@@ -12,10 +12,6 @@ namespace Quantira.Infrastructure.AI.Services;
 
 public sealed class DeepSeekAIService : BaseAiService
 {
-    private const string ApiUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-    private const string Model = "deepseek-ai/deepseek-v3.2";
-    private const int MaxTokens = 8192;
-
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -24,6 +20,7 @@ public sealed class DeepSeekAIService : BaseAiService
     };
 
     private readonly HttpClient _httpClient;
+    private readonly DeepSeekOptions _options;
     private readonly ILogger<DeepSeekAIService> _logger;
 
     public DeepSeekAIService(
@@ -33,10 +30,11 @@ public sealed class DeepSeekAIService : BaseAiService
         : base(logger, "DeepSeek")
     {
         _httpClient = httpClient;
+        _options = options.Value;
         _logger = logger;
 
         _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
+            new AuthenticationHeaderValue("Bearer", _options.ApiKey);
     }
 
     public override async Task<string> GetAdviceAsync(
@@ -49,7 +47,7 @@ public sealed class DeepSeekAIService : BaseAiService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                ApiUrl, request, JsonOpts, cancellationToken);
+                _options.ApiUrl, request, JsonOpts, cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -74,7 +72,7 @@ public sealed class DeepSeekAIService : BaseAiService
     {
         var request = BuildRequest(portfolioContext, question, stream: true);
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiUrl)
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.ApiUrl)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(request, JsonOpts),
@@ -133,20 +131,20 @@ public sealed class DeepSeekAIService : BaseAiService
         }
     }
 
-    private static DeepSeekRequest BuildRequest(
+    private DeepSeekRequest BuildRequest(
         string context,
         string question,
         bool stream) =>
         new(
-            Model: Model,
+            Model: _options.Model,
             Messages:
             [
                 new DeepSeekMessage(Role: "system", Content: BuildSystemPrompt(context)),
                 new DeepSeekMessage(Role: "user", Content: question)
             ],
-            MaxTokens: MaxTokens,
-            Temperature: 1.0,
-            TopP: 0.95,
+            MaxTokens: _options.MaxTokens,
+            Temperature: _options.Temperature,
+            TopP: _options.TopP,
             Stream: stream,
             ChatTemplateKwargs: new DeepSeekChatTemplateKwargs(Thinking: false));
 
@@ -172,4 +170,9 @@ public sealed class DeepSeekOptions
 {
     /// <summary>Store via: <c>dotnet user-secrets set "DeepSeek:ApiKey" "nvapi-..."</c></summary>
     public string ApiKey { get; set; } = string.Empty;
+    public string ApiUrl { get; set; } = "https://integrate.api.nvidia.com/v1/chat/completions";
+    public string Model { get; set; } = "deepseek-ai/deepseek-v3.2";
+    public int MaxTokens { get; set; } = 8192;
+    public double Temperature { get; set; } = 1.0;
+    public double TopP { get; set; } = 0.95;
 }

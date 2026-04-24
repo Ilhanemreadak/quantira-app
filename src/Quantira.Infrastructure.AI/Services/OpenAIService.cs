@@ -12,10 +12,6 @@ namespace Quantira.Infrastructure.AI.Services;
 
 public sealed class OpenAIService : BaseAiService
 {
-    private const string ApiUrl = "https://api.openai.com/v1/chat/completions";
-    private const string Model = "gpt-4o";
-    private const int MaxTokens = 1024;
-
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -24,6 +20,7 @@ public sealed class OpenAIService : BaseAiService
     };
 
     private readonly HttpClient _httpClient;
+    private readonly OpenAIOptions _options;
     private readonly ILogger<OpenAIService> _logger;
 
     public OpenAIService(
@@ -33,10 +30,11 @@ public sealed class OpenAIService : BaseAiService
         : base(logger, "OpenAI")
     {
         _httpClient = httpClient;
+        _options = options.Value;
         _logger = logger;
 
         _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
+            new AuthenticationHeaderValue("Bearer", _options.ApiKey);
     }
 
     public override async Task<string> GetAdviceAsync(
@@ -49,7 +47,7 @@ public sealed class OpenAIService : BaseAiService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                ApiUrl, request, JsonOpts, cancellationToken);
+                _options.ApiUrl, request, JsonOpts, cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -74,7 +72,7 @@ public sealed class OpenAIService : BaseAiService
     {
         var request = BuildRequest(portfolioContext, question, stream: true);
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiUrl)
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.ApiUrl)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(request, JsonOpts),
@@ -133,13 +131,13 @@ public sealed class OpenAIService : BaseAiService
         }
     }
 
-    private static OpenAIRequest BuildRequest(
+    private OpenAIRequest BuildRequest(
         string context,
         string question,
         bool stream) =>
         new(
-            Model: Model,
-            MaxTokens: MaxTokens,
+            Model: _options.Model,
+            MaxTokens: _options.MaxTokens,
             Stream: stream,
             Messages:
             [
@@ -165,4 +163,7 @@ public sealed class OpenAIOptions
 {
     /// <summary>Store via: <c>dotnet user-secrets set "OpenAI:ApiKey" "sk-..."</c></summary>
     public string ApiKey { get; set; } = string.Empty;
+    public string ApiUrl { get; set; } = "https://api.openai.com/v1/chat/completions";
+    public string Model { get; set; } = "gpt-4o";
+    public int MaxTokens { get; set; } = 1024;
 }

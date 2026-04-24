@@ -11,9 +11,6 @@ namespace Quantira.Infrastructure.AI.Services;
 
 public sealed class ClaudeAIService : BaseAiService
 {
-    private const string ApiUrl = "https://api.anthropic.com/v1/messages";
-    private const string Model = "claude-opus-4-6";
-    private const int MaxTokens = 1024;
     private const string ApiVersion = "2023-06-01";
 
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -24,6 +21,7 @@ public sealed class ClaudeAIService : BaseAiService
     };
 
     private readonly HttpClient _httpClient;
+    private readonly ClaudeOptions _options;
     private readonly ILogger<ClaudeAIService> _logger;
 
     public ClaudeAIService(
@@ -33,9 +31,10 @@ public sealed class ClaudeAIService : BaseAiService
         : base(logger, "Claude")
     {
         _httpClient = httpClient;
+        _options = options.Value;
         _logger = logger;
 
-        _httpClient.DefaultRequestHeaders.Add("x-api-key", options.Value.ApiKey);
+        _httpClient.DefaultRequestHeaders.Add("x-api-key", _options.ApiKey);
         _httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
     }
 
@@ -49,7 +48,7 @@ public sealed class ClaudeAIService : BaseAiService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                ApiUrl, request, JsonOpts, cancellationToken);
+                _options.ApiUrl, request, JsonOpts, cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -74,7 +73,7 @@ public sealed class ClaudeAIService : BaseAiService
     {
         var request = BuildRequest(portfolioContext, question, stream: true);
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiUrl)
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.ApiUrl)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(request, JsonOpts),
@@ -136,13 +135,13 @@ public sealed class ClaudeAIService : BaseAiService
         }
     }
 
-    private static ClaudeRequest BuildRequest(
+    private ClaudeRequest BuildRequest(
         string context,
         string question,
         bool stream) =>
         new(
-            Model: Model,
-            MaxTokens: MaxTokens,
+            Model: _options.Model,
+            MaxTokens: _options.MaxTokens,
             Stream: stream,
             System: BuildSystemPrompt(context),
             Messages: [new ClaudeMessage(Role: "user", Content: question)]);
@@ -165,4 +164,7 @@ public sealed class ClaudeOptions
 {
     /// <summary>Store via: <c>dotnet user-secrets set "Claude:ApiKey" "sk-ant-..."</c></summary>
     public string ApiKey { get; set; } = string.Empty;
+    public string ApiUrl { get; set; } = "https://api.anthropic.com/v1/messages";
+    public string Model { get; set; } = "claude-opus-4-6";
+    public int MaxTokens { get; set; } = 1024;
 }

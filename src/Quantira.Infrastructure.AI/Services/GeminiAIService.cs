@@ -11,9 +11,6 @@ namespace Quantira.Infrastructure.AI.Services;
 
 public sealed class GeminiAIService : BaseAiService
 {
-    private const string BaseApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest";
-    private const int MaxTokens = 1024;
-
     // Gemini API uses camelCase — kept separate from the shared base opts.
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -23,6 +20,7 @@ public sealed class GeminiAIService : BaseAiService
     };
 
     private readonly HttpClient _httpClient;
+    private readonly GeminiOptions _options;
     private readonly ILogger<GeminiAIService> _logger;
 
     public GeminiAIService(
@@ -32,9 +30,10 @@ public sealed class GeminiAIService : BaseAiService
         : base(logger, "Gemini")
     {
         _httpClient = httpClient;
+        _options = options.Value;
         _logger = logger;
 
-        _httpClient.DefaultRequestHeaders.Add("x-goog-api-key", options.Value.ApiKey);
+        _httpClient.DefaultRequestHeaders.Add("x-goog-api-key", _options.ApiKey);
     }
 
     public override async Task<string> GetAdviceAsync(
@@ -47,7 +46,7 @@ public sealed class GeminiAIService : BaseAiService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                $"{BaseApiUrl}:generateContent", request, JsonOpts, cancellationToken);
+                $"{_options.BaseApiUrl}:generateContent", request, JsonOpts, cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -74,7 +73,7 @@ public sealed class GeminiAIService : BaseAiService
         var request = BuildRequest(portfolioContext, question);
 
         var httpRequest = new HttpRequestMessage(
-            HttpMethod.Post, $"{BaseApiUrl}:streamGenerateContent?alt=sse")
+            HttpMethod.Post, $"{_options.BaseApiUrl}:streamGenerateContent?alt=sse")
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(request, JsonOpts),
@@ -131,11 +130,11 @@ public sealed class GeminiAIService : BaseAiService
         }
     }
 
-    private static GeminiRequest BuildRequest(string context, string question) =>
+    private GeminiRequest BuildRequest(string context, string question) =>
         new(
             SystemInstruction: new GeminiContent(Parts: [new GeminiPart(BuildSystemPrompt(context))]),
             Contents: [new GeminiContent(Role: "user", Parts: [new GeminiPart(question)])],
-            GenerationConfig: new GeminiGenerationConfig(MaxOutputTokens: MaxTokens));
+            GenerationConfig: new GeminiGenerationConfig(MaxOutputTokens: _options.MaxTokens));
 
     private sealed record GeminiRequest(
         GeminiContent SystemInstruction,
@@ -153,4 +152,6 @@ public sealed class GeminiOptions
 {
     /// <summary>Store via: <c>dotnet user-secrets set "Gemini:ApiKey" "..."</c></summary>
     public string ApiKey { get; set; } = string.Empty;
+    public string BaseApiUrl { get; set; } = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest";
+    public int MaxTokens { get; set; } = 1024;
 }
